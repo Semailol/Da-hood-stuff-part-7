@@ -1,0 +1,7 @@
+    if l__Character__4:FindFirstChild("[!VIRUS!]") and _G.Coughing ~= true then
+        _G.Coughing = true;
+        l__MainEvent__11:FireServer("VirusCough");
+        delay(10 + math.random(10, 60), function()
+            _G.Coughing = false;
+        end);
+    end;

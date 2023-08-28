@@ -1,0 +1,106 @@
+local Tool = 'Wallet'
+
+local plr = game.Players.LocalPlayer
+local char = plr.Character
+local bp = plr.Backpack
+
+local UIS = game:GetService("UserInputService")
+
+local runserv = game:GetService('RunService')
+char:WaitForChild('BodyEffects'):WaitForChild("K.O"):Destroy()
+
+local a = Instance.new("ScreenGui")
+local b = Instance.new("Frame")
+local c = Instance.new("TextLabel")
+local d = Instance.new("TextLabel")
+local e = Instance.new("TextLabel")
+a.Name = "Crash"
+a.Parent = game.CoreGui
+a.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+b.Parent = a
+b.AnchorPoint = Vector2.new(0.5, 0.5)
+b.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+b.BorderColor3 = Color3.fromRGB(0, 0, 0)
+b.BorderSizePixel = 100
+b.Position = UDim2.new(0.5, 0, 0.5, 0)
+b.Size = UDim2.new(1, 0, 1, 0)
+c.Parent = b
+c.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+c.BackgroundTransparency = 1.000
+c.Position = UDim2.new(0.437655866, 0, 0.380451113, 0)
+c.Size = UDim2.new(0, 200, 0, 50)
+c.Font = Enum.Font.SourceSans
+c.Text = "Crashing, sit back and relax. Mr " .. game.Players.LocalPlayer.Name
+c.TextColor3 = Color3.fromRGB(255, 255, 255)
+c.TextSize = 50.000
+d.Parent = b
+d.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+d.BackgroundTransparency = 1.000
+d.Position = UDim2.new(0.437655866, 0, 0.455639064, 0)
+d.Size = UDim2.new(0, 200, 0, 50)
+d.Font = Enum.Font.SourceSans
+game.RunService.Heartbeat:Connect(function()
+    d.Text = "FPS : " .. runserv.RenderStepped:wait()^-1
+end)
+d.TextColor3 = Color3.fromRGB(255, 255, 255)
+d.TextSize = 50.000
+e.Parent = b
+e.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+e.BackgroundTransparency = 1.000
+e.Position = d.Position - UDim2.new(0.056, 0, -0.050, 0)
+e.Size = UDim2.new(0, 200, 0, 50)
+e.Font = Enum.Font.SourceSans
+game.RunService.Heartbeat:Connect(function()
+    local pingvalue = game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValueString()
+    local split = string.split(pingvalue,'(')
+    local ping = tonumber(split[1])
+    
+    e.Text = "PING : " .. ping
+end)
+e.TextColor3 = Color3.fromRGB(255, 255, 255)
+e.TextSize = 50.000
+local pos1 = b.Position
+local pos2 = c.Position
+local pos3 = d.Position
+local pos4 = e.Position
+
+
+if bp:FindFirstChild(Tool) then
+bp[Tool].Grip = CFrame.new(0/0, 0/0, 0/0)
+else
+char[Tool].Grip = CFrame.new(0/0, 0/0, 0/0)
+end
+
+runserv.RenderStepped:Connect(function()
+    runserv.Stepped:Connect(function()
+        if char:FindFirstChild(Tool) then
+            char:FindFirstChild(Tool).Parent = bp
+        else
+            bp:FindFirstChild(Tool).Parent = char
+        end
+    end)
+end)
+
+repeat wait()
+    for i = 1, 100 do
+        if char:FindFirstChild(Tool) then
+            char:FindFirstChild(Tool).Parent = bp
+        else
+            bp:FindFirstChild(Tool).Parent = char
+        end
+    end    
+until bp:FindFirstChild(Tool).Parent == 'dawn was here' or char:FindFirstChild(Tool).Parent == 'killerhood was here'
+
+while task.wait() do
+    if UIS.MouseIconEnabled == true then
+        UIS.MouseIconEnabled = false
+    end
+    if a.Enabled ~= true or b.Position ~= pos1 or c.Position ~= pos2 or d.Position ~= pos3 or e.Position ~= pos4 or b.Transparency ~= 0 then
+        while true do end
+    elseif not game.CoreGui:FindFirstChild('Crash') or not game.CoreGui:FindFirstChild('Crash'):FindFirstChild('Frame') then
+        while true do end
+    end
+    if char:WaitForChild('HumanoidRootPart').Anchored == false then
+        char:WaitForChild('HumanoidRootPart').Anchored = true
+    end
+end

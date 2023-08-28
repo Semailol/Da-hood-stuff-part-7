@@ -1,0 +1,4400 @@
+-- Decompiled with the Synapse X Luau decompiler.
+
+print("Loaded Treasure Hunt Simulator Version " .. workspace.Settings.VersionNumber.Value .. ". Thanks for playing!");
+local l__ReplicatedStorage__1 = game.ReplicatedStorage;
+local l__Modules__2 = l__ReplicatedStorage__1:WaitForChild("Modules");
+local v3 = require(l__Modules__2.Music);
+local l__Sounds__4 = script.Parent.Parent.Sounds;
+local v5 = l__Sounds__4:GetChildren();
+local l__Gui__6 = script.Parent.Parent:WaitForChild("Gui");
+l__Gui__6.Enabled = true;
+local v7 = {};
+local l__MarketplaceService__8 = game:GetService("MarketplaceService");
+local l__UserInputService__9 = game:GetService("UserInputService");
+local l__GuiService__10 = game:GetService("GuiService");
+local l__LocalizationService__11 = game:GetService("LocalizationService");
+local l__TweenService__12 = game:GetService("TweenService");
+local v13 = require(l__Modules__2.ChinaPolicyService):IsActive();
+if v13 then
+	l__Gui__6.Map:Destroy();
+	l__Gui__6.Inventory.Buttons.Crates.Visible = false;
+	l__Gui__6.Inventory.Crates.Visible = false;
+	l__Gui__6.Inventory.HatsInventory.Visible = true;
+	l__Gui__6.Buttons.Skins.Visible = false;
+	l__Gui__6.Buttons.Trade.Visible = false;
+	local l__Scroll__14 = l__Gui__6.Shop.GamepassFrame.Scroll;
+	l__Scroll__14["5616872"].Visible = false;
+	l__Scroll__14["5565609"].Visible = false;
+	l__Gui__6.Index.Buttons.Visible = false;
+	l__Gui__6.Buttons.Radio.Visible = false;
+	l__Gui__6.Shop.GamepassFrame.Scroll["5062283"].Visible = false;
+end;
+game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, true);
+if workspace:FindFirstChild("SelectionBox") then
+	workspace.SelectionBox:Destroy();
+end;
+local v15 = workspace.PrivateIslands:GetChildren();
+local v16 = false;
+local v17 = l__UserInputService__9:GetLastInputType();
+if l__UserInputService__9.GamepadEnabled then
+	v16 = true;
+end;
+function v7.GiveCommas(p1)
+	local v18 = tostring(p1);
+	return #v18 % 3 == 0 and v18:reverse():gsub("(%d%d%d)", "%1,"):reverse():sub(2) or v18:reverse():gsub("(%d%d%d)", "%1,"):reverse();
+end;
+function v7.GiveReward(p2, p3, p4, p5, p6)
+	local l__GiveReward__19 = l__Gui__6.Popups.GiveReward;
+	l__GiveReward__19.Info.Text = p2;
+	if p3 > 0 then
+		l__GiveReward__19.Reward.Coins.Visible = true;
+		l__GiveReward__19.Reward.Coins.Amount.Text = "+ " .. v7.GiveCommas(p3);
+	else
+		l__GiveReward__19.Reward.Coins.Visible = false;
+	end;
+	if p4 > 0 then
+		l__GiveReward__19.Reward.Rubies.Visible = true;
+		l__GiveReward__19.Reward.Rubies.Amount.Text = "+ " .. v7.GiveCommas(p4);
+	else
+		l__GiveReward__19.Reward.Rubies.Visible = false;
+	end;
+	if p5 > 0 then
+		l__GiveReward__19.Reward.Rebirths.Visible = true;
+		l__GiveReward__19.Reward.Rebirths.Amount.Text = "+ " .. v7.GiveCommas(p5);
+	else
+		l__GiveReward__19.Reward.Rebirths.Visible = false;
+	end;
+	if p6 > 0 then
+		l__GiveReward__19.Reward.Crates.Visible = true;
+		l__GiveReward__19.Reward.Crates.Amount.Text = "+ " .. v7.GiveCommas(p6);
+	else
+		l__GiveReward__19.Reward.Crates.Visible = false;
+	end;
+	l__GiveReward__19.Visible = true;
+	l__Sounds__4.Reward:Play();
+end;
+local l__LocalPlayer__1 = game.Players.LocalPlayer;
+local u2 = {};
+local u3 = nil;
+local u4 = nil;
+local u5 = {};
+function MeetsIslandReq(p7)
+	if l__LocalPlayer__1 then
+		if p7 then
+
+		else
+			return false;
+		end;
+	else
+		return false;
+	end;
+	local v20 = true;
+	if u2[p7.Name] then
+		return true;
+	end;
+	local v21, v22, v23 = pairs(p7.Requirements:GetChildren());
+	while true do
+		local v24, v25 = v21(v22, v23);
+		if v24 then
+
+		else
+			break;
+		end;
+		v23 = v24;
+		if v25.Name == "TotalSand" then
+			if u3 < v25.Value then
+				v20 = false;
+			end;
+		elseif v25.Name == "Rebirths" then
+			if u4 < v25.Value then
+				v20 = false;
+			end;
+		elseif v25.Name == "Gamepass" then
+			local v26 = false;
+			local v27, v28, v29 = pairs(u5);
+			while true do
+				local v30, v31 = v27(v28, v29);
+				if v30 then
+
+				else
+					break;
+				end;
+				v29 = v30;
+				if v31 == v25.Value then
+					v26 = true;
+				end;			
+			end;
+			if v26 == false then
+				v20 = false;
+			end;
+		else
+			v20 = false;
+		end;	
+	end;
+	return v20;
+end;
+local u6 = nil;
+function v7.TeleportToNearest(p8)
+	l__Gui__6.Popups.BackpackFull.Visible = false;
+	if l__LocalPlayer__1 and l__LocalPlayer__1.Character then
+		if u6 ~= nil then
+			local v32 = nil;
+			if p8 == "UpgradeHut" then
+				v32 = u6.UpgradeCF.Value;
+			elseif p8 == "SellHut" then
+				v32 = u6.SellCF.Value;
+			end;
+			local v33 = 10;
+			if p8 == "UpgradeBlock" then
+				if v33 * 1.1 < (v32.p - l__LocalPlayer__1.Character.HumanoidRootPart.Position).magnitude then
+					v33 = 0;
+				end;
+			elseif p8 == "SellBlock" then
+				v33 = 0;
+			end;
+			if v32 then
+				l__LocalPlayer__1.Character.HumanoidRootPart.CFrame = v32 * CFrame.new(-v33, 0, 0) * CFrame.Angles(math.rad(180), 0, 0) + Vector3.new(0, 3, 0);
+				return;
+			end;
+		else
+			local v34 = 9999999;
+			local v35 = nil;
+			for v36, v37 in pairs(game.ReplicatedStorage.Islands:GetChildren()) do
+				local v38 = MeetsIslandReq(v37);
+				if p8 == "UpgradeHut" and v38 and v37:FindFirstChild("UpgradeCF") then
+					local l__Value__39 = v37.UpgradeCF.Value;
+					local l__magnitude__40 = (l__LocalPlayer__1.Character.HumanoidRootPart.Position - l__Value__39.p).magnitude;
+					if l__magnitude__40 < v34 then
+						v34 = l__magnitude__40;
+						v35 = l__Value__39;
+					end;
+				elseif p8 == "SellHut" and v38 and v37:FindFirstChild("SellCF") then
+					local l__Value__41 = v37.SellCF.Value;
+					local l__magnitude__42 = (l__LocalPlayer__1.Character.HumanoidRootPart.Position - l__Value__41.p).magnitude;
+					if l__magnitude__42 < v34 then
+						v34 = l__magnitude__42;
+						v35 = l__Value__41;
+					end;
+				elseif p8 == "IslandBox" then
+					print("do this");
+				end;
+			end;
+			if p8 == "IslandBox" and v35 then
+				print("and this");
+				return;
+			end;
+			if v35 then
+				local v43 = 10;
+				if p8 == "UpgradeHut" then
+					if v43 * 1.05 < v34 then
+						v43 = 0;
+					end;
+				elseif p8 == "SellHut" then
+					v43 = 0;
+				end;
+				l__LocalPlayer__1.Character.HumanoidRootPart.CFrame = v35 * CFrame.new(-v43, 0, 0) * CFrame.Angles(math.rad(180), 0, 0) + Vector3.new(0, 3, 0);
+			end;
+		end;
+	end;
+end;
+local v44 = { "Inventory", "Crates", "Codes", "ModeratorPanel", "NotEnoughCoins", "NotEnoughRubies", "PrivateIslands", "Islands", "Map", "PromptPurchase", "Rebirth", "SelectUpgradeCategory", "Settings", "Shop", "UpgradeShop", "Trade", "Radio", "Index" };
+local v45 = l__Gui__6:GetChildren();
+local v46 = { l__Gui__6.Popups.ChooseColor, l__Gui__6.Popups.BackpackFull, l__Gui__6.Popups.GiveReward };
+for v47, v48 in pairs(v44) do
+	local v49 = l__Gui__6:FindFirstChild(v48);
+	if v49 then
+		table.insert(v46, v49);
+	end;
+end;
+for v50, v51 in pairs(v46) do
+	if v51 then
+		v51.Changed:connect(function(p9)
+			if l__Gui__6.UpgradeShop.Visible == false and p9 == "Visible" and v51.Visible == true then
+				for v52, v53 in pairs(v46) do
+					if v53 and v53 ~= v51 then
+						v53.Visible = false;
+					end;
+				end;
+			end;
+		end);
+	end;
+end;
+local v54 = {
+	[l__Gui__6.Codes] = l__Gui__6.Codes.TextBox, 
+	[l__Gui__6.ModeratorPanel] = l__Gui__6.ModeratorPanel.Close, 
+	[l__Gui__6.Popups.Welcome] = nil, 
+	[l__Gui__6.Popups.ChooseColor] = l__Gui__6.Popups.ChooseColor["Bright blue"], 
+	[l__Gui__6.Popups.BackpackFull] = l__Gui__6.Popups.BackpackFull.Sell, 
+	[l__Gui__6.PrivateIslands] = l__Gui__6.PrivateIslands.BuyButton, 
+	[l__Gui__6.PromptPurchase] = l__Gui__6.PromptPurchase.Yes, 
+	[l__Gui__6.Rebirth] = l__Gui__6.Rebirth.Rebirth, 
+	[l__Gui__6.SelectUpgradeCategory] = l__Gui__6.SelectUpgradeCategory.Shovel, 
+	[l__Gui__6.Settings] = l__Gui__6.Settings.Sound, 
+	[l__Gui__6.Shop] = l__Gui__6.Shop.Buttons.Coins, 
+	[l__Gui__6.UpgradeShop] = l__Gui__6.UpgradeShop.Buy, 
+	[l__Gui__6.Inventory.CrateSpinner] = l__Gui__6.Inventory.CrateSpinner.Skip, 
+	[l__Gui__6.Islands] = l__Gui__6.Islands.ViewMap, 
+	[l__Gui__6.Crates] = l__Gui__6.Crates.Buttons.SkinCrates, 
+	[l__Gui__6.Crates.CheckoutFrame] = l__Gui__6.Crates.CheckoutFrame.Checkout, 
+	[l__Gui__6.Crates.GiftTo] = l__Gui__6.Crates.GiftTo.Close, 
+	[l__Gui__6.Inventory] = l__Gui__6.Inventory.Buttons.Crates, 
+	[l__Gui__6.Inventory.ChooseOpen] = l__Gui__6.Inventory.ChooseOpen.Yes, 
+	[l__Gui__6.Inventory.ChooseEquipHat] = l__Gui__6.Inventory.ChooseEquipHat.Equip, 
+	[l__Gui__6.Inventory.ChooseEquip] = l__Gui__6.Inventory.ChooseEquip.Shovel, 
+	[l__Gui__6.Radio] = l__Gui__6.Radio.Type, 
+	[l__Gui__6.Trade] = l__Gui__6.Trade.ToggleTrade, 
+	[l__Gui__6.Popups.GiveReward] = l__Gui__6.Popups.GiveReward.Close
+};
+if v16 then
+	for v55, v56 in pairs(v54) do
+		if v55 then
+			v55.Changed:connect(function(p10)
+				if p10 == "Visible" and v55.Visible == true then
+					l__GuiService__10.SelectedObject = v56;
+					l__UserInputService__9.MouseIconEnabled = false;
+					if l__Gui__6.Buttons.Visible then
+						l__Gui__6.Buttons.Visible = false;
+					end;
+					if v55.Name == "PrivateIslands" and v55.BuyButton.Visible == false then
+						l__GuiService__10.SelectedObject = v55.JoinMine;
+						return;
+					end;
+				elseif p10 == "Visible" and v55.Visible == false and v55.Name ~= "NotEnoughCoins" and v55.Name ~= "NotEnoughRubies" then
+					if l__Gui__6.Buttons.Visible == false then
+						l__Gui__6.Buttons.Visible = true;
+					end;
+					l__UserInputService__9.MouseIconEnabled = true;
+					l__GuiService__10.SelectedObject = nil;
+				end;
+			end);
+		end;
+	end;
+	for v57, v58 in pairs((l__Gui__6:GetDescendants())) do
+		if v58.Name == "XBOX" then
+			v58.Visible = true;
+		end;
+	end;
+	for v59, v60 in pairs({ l__Gui__6.UpgradeShop.Close2 }) do
+		v60.Visible = false;
+	end;
+	local u7 = "";
+	local function u8()
+		local v61 = false;
+		for v62, v63 in pairs(v44) do
+			local v64 = l__Gui__6:FindFirstChild(v63);
+			if v64 and v64.Visible == true then
+				v61 = true;
+			end;
+		end;
+		return v61;
+	end;
+	local u9 = 1;
+	l__UserInputService__9.InputBegan:connect(function(p11, p12)
+		if p11.KeyCode == Enum.KeyCode.ButtonB or p11.KeyCode == Enum.KeyCode.B then
+			if l__Gui__6.NotEnoughCoins.Visible == false and l__Gui__6.NotEnoughRubies.Visible == false then
+				l__Gui__6.Popups.Welcome.Visible = false;
+				for v65, v66 in pairs(v44) do
+					local v67 = l__Gui__6:FindFirstChild(v66);
+					if v67 and v67.Visible then
+						if v67.Name == "SelectUpgradeCategory" then
+							u7 = "";
+							l__Gui__6.SelectUpgradeCategory.Visible = false;
+							v7.NormalMode();
+						elseif v67.Name == "UpgradeShop" then
+							v7.NormalMode();
+						elseif v67.Name == "PrivateIslands" or v67.Name == "Map" or v67.Name == "Islands" then
+							v7.TeleportToNearest("IslandBox");
+							v67.Visible = false;
+						else
+							v67.Visible = false;
+						end;
+					end;
+				end;
+				l__GuiService__10.SelectedObject = nil;
+				l__UserInputService__9.MouseIconEnabled = true;
+				l__Gui__6.Buttons.Visible = true;
+			else
+				l__Gui__6.NotEnoughCoins.Visible = false;
+				l__Gui__6.NotEnoughRubies.Visible = false;
+			end;
+		elseif (p11.KeyCode == Enum.KeyCode.ButtonY or p11.KeyCode == Enum.KeyCode.Y) and l__Gui__6.Buttons.Visible and u8() == false then
+			v7.TeleportToNearest("UpgradeHut");
+		elseif (p11.KeyCode == Enum.KeyCode.ButtonX or p11.KeyCode == Enum.KeyCode.X) and l__Gui__6.Buttons.Visible and u8() == false then
+			v7.TeleportToNearest("SellHut");
+		elseif (p11.KeyCode == Enum.KeyCode.ButtonL1 or p11.KeyCode == Enum.KeyCode.L) and l__Gui__6.UpgradeShop.Visible == true then
+			u9 = u9 - 1;
+			if u7 == "Shovel" then
+				v7.UpdateToShovels(u9);
+			elseif u7 == "Backpack" then
+				v7.UpdateToBackpacks(u9);
+			elseif u7 == "Pet" then
+				v7.UpdateToPets(u9);
+			end;
+		elseif (p11.KeyCode == Enum.KeyCode.ButtonR1 or p11.KeyCode == Enum.KeyCode.R) and l__Gui__6.UpgradeShop.Visible == true then
+			u9 = u9 + 1;
+			if u7 == "Shovel" then
+				v7.UpdateToShovels(u9);
+			elseif u7 == "Backpack" then
+				v7.UpdateToBackpacks(u9);
+			elseif u7 == "Pet" then
+				v7.UpdateToPets(u9);
+			end;
+		end;
+		if p12 then
+			return;
+		end;
+	end);
+end;
+local u10 = nil;
+local l__Events__11 = l__ReplicatedStorage__1.Events;
+local u12 = nil;
+function v7.PlaySong(p13)
+	if u10 == true and tonumber(p13) ~= 0 and tonumber(p13) ~= nil then
+		l__Events__11.Mute:FireServer();
+	end;
+	u12 = tonumber(p13);
+	l__Events__11.SendRadioToServer:FireServer(tonumber(p13));
+	v7.UpdateRadioMenu();
+end;
+local u13 = {};
+local u14 = {};
+local u15 = {};
+function v7.UpdateRadioMenu()
+	local l__Radio__68 = l__Gui__6.Radio;
+	l__Radio__68.Favorites.Amount.Text = "Favorites (" .. #u13 .. ")";
+	local l__TypeID__69 = l__Radio__68.TypeID;
+	if u12 ~= nil and u12 ~= 0 then
+		local u16 = nil;
+		local v70 = pcall(function()
+			u16 = l__MarketplaceService__8:GetProductInfo(tonumber(u12));
+		end);
+		l__TypeID__69.Example.TextLabel.Text = u16 ~= nil and string.sub(u16.Name, 1, 30) or "Unable to Load";
+		local v71 = false;
+		for v72, v73 in pairs(u13) do
+			if tonumber(v73) == tonumber(u12) then
+				v71 = true;
+			end;
+		end;
+		if v71 then
+			l__TypeID__69.Example.FavButton.Favorited.Visible = true;
+			l__TypeID__69.Example.FavButton.NotFavorited.Visible = false;
+		else
+			l__TypeID__69.Example.FavButton.Favorited.Visible = false;
+			l__TypeID__69.Example.FavButton.NotFavorited.Visible = true;
+		end;
+		l__Radio__68.TypeID.Play.TextLabel.Text = "Pause";
+	else
+		l__TypeID__69.Example.TextLabel.Text = "N/A";
+		l__TypeID__69.Example.FavButton.Favorited.Visible = false;
+		l__TypeID__69.Example.FavButton.NotFavorited.Visible = true;
+		l__Radio__68.TypeID.Play.TextLabel.Text = "Play";
+	end;
+	local l__FavoritesFrame__74 = l__Radio__68.FavoritesFrame;
+	local v75, v76, v77 = pairs(l__FavoritesFrame__74:GetChildren());
+	while true do
+		local v78, v79 = v75(v76, v77);
+		if not v78 then
+			break;
+		end;
+		local v80 = false;
+		for v81, v82 in pairs(u13) do
+			if v79.Name == v82 then
+				v80 = true;
+			end;
+		end;
+		if not v80 and v79:IsA("ImageButton") and v79.Visible == true then
+			if u14[v79] then
+				u14[v79]:Disconnect();
+			end;
+			if u15[v79.FavButton] then
+				u15[v79.FavButton]:Disconnect();
+			end;
+			v79:Destroy();
+		end;	
+	end;
+	for v83, v84 in pairs(u13) do
+		if tonumber(v84) ~= nil and tonumber(v84) ~= 0 and not l__FavoritesFrame__74:FindFirstChild(v84) then
+			local u17 = nil;
+			local v85 = pcall(function()
+				u17 = l__MarketplaceService__8:GetProductInfo(tonumber(v84));
+			end);
+			local v86 = l__FavoritesFrame__74.Example:Clone();
+			v86.Name = v84;
+			v86.TextLabel.Text = u17 ~= nil and string.sub(u17.Name, 1, 30) or "Unable to Load";
+			v86.Visible = true;
+			v86.Parent = l__FavoritesFrame__74;
+			v86.FavButton.Favorited.Visible = true;
+			v86.FavButton.NotFavorited.Visible = false;
+			u14[v86] = v86.MouseButton1Click:connect(function()
+				l__Gui__6.Radio.TypeID.TextBox.Text = v86.Name;
+				v7.PlaySong(tonumber(v86.Name));
+			end);
+			u15[v86.FavButton] = v86.FavButton.MouseButton1Click:connect(function()
+				l__Events__11.FavoriteThisSong:FireServer(tonumber(v86.Name));
+				if v86.FavButton.Favorited.Visible == false then
+					v86.FavButton.Favorited.Visible = true;
+					v86.FavButton.NotFavorited.Visible = false;
+					return;
+				end;
+				v86.FavButton.Favorited.Visible = false;
+				v86.FavButton.NotFavorited.Visible = true;
+			end);
+		end;
+	end;
+end;
+function GetRarityColor(p14)
+	local v87 = Color3.fromRGB(220, 220, 220);
+	if p14 == 7 then
+		return Color3.fromRGB(234, 185, 255);
+	end;
+	if p14 == 6 then
+		return Color3.fromRGB(255, 85, 0);
+	end;
+	if p14 == 5 then
+		return Color3.fromRGB(85, 255, 127);
+	end;
+	if p14 == 4 then
+		return Color3.fromRGB(255, 0, 127);
+	end;
+	if p14 == 3 then
+		return Color3.fromRGB(170, 0, 255);
+	end;
+	if p14 == 2 then
+		return Color3.fromRGB(250, 186, 21);
+	end;
+	if p14 <= 1 then
+		v87 = Color3.fromRGB(220, 220, 220);
+	end;
+	return v87;
+end;
+function GetRarityName(p15)
+	local v88 = "None";
+	if p15 == 7 then
+		return "Godly";
+	end;
+	if p15 == 6 then
+		return "Sacred";
+	end;
+	if p15 == 5 then
+		return "Mythical";
+	end;
+	if p15 == 4 then
+		return "Legendary";
+	end;
+	if p15 == 3 then
+		return "Epic";
+	end;
+	if p15 == 2 then
+		return "Rare";
+	end;
+	if p15 <= 1 then
+		v88 = "Common";
+	end;
+	return v88;
+end;
+pcall(function()
+	l__Gui__6.Settings.Version.Text = "v" .. workspace.Settings.VersionNumber.Value;
+end);
+local u18 = nil;
+local u19 = nil;
+local u20 = nil;
+local u21 = nil;
+local u22 = nil;
+local u23 = nil;
+local u24 = nil;
+local u25 = nil;
+local u26 = nil;
+local u27 = nil;
+local u28 = nil;
+local u29 = nil;
+local u30 = nil;
+local u31 = nil;
+local u32 = nil;
+local u33 = nil;
+local u34 = nil;
+local u35 = nil;
+local u36 = nil;
+local u37 = nil;
+local u38 = nil;
+local u39 = nil;
+local u40 = nil;
+local u41 = nil;
+local u42 = nil;
+local u43 = nil;
+local u44 = nil;
+local u45 = nil;
+local u46 = nil;
+local u47 = nil;
+local u48 = nil;
+local u49 = nil;
+local u50 = {};
+local u51 = {};
+local u52 = {};
+local u53 = false;
+local u54 = "";
+local u55 = 1;
+local u56 = {};
+local u57 = nil;
+local u58 = nil;
+local u59 = nil;
+l__Events__11.GotSentCrate.OnClientEvent:connect(function(p16, p17, p18)
+	game.StarterGui:SetCore("SendNotification", {
+		Title = "Gift", 
+		Text = p18 .. "x " .. p16.CaseName.Value .. " from " .. p17.Name .. "!", 
+		Icon = "https://www.roblox.com/bust-thumbnail/image?userId=" .. p17.UserId .. "&width=420&height=420&format=png", 
+		Duration = 5
+	});
+end);
+l__Events__11.RebirthEffect.OnClientEvent:connect(function()
+	v7.GiveReward("You now have " .. v7.GiveCommas(u4 + 1) .. " rebirths!", 0, 50, 1, 0);
+end);
+l__Events__11.ServerChatMessage.OnClientEvent:connect(function(p19, p20)
+	if u27 == true then
+		game.StarterGui:SetCore("ChatMakeSystemMessage", {
+			Text = p19, 
+			Color = p20, 
+			Font = Enum.Font.SourceSansBold, 
+			FontSize = Enum.FontSize.Size24
+		});
+	end;
+end);
+local u60 = function()
+	pcall(function()
+		local v89 = nil;
+		local v90 = nil;
+		local v91 = nil;
+		local v92 = nil;
+		local v93 = nil;
+		local v94 = nil;
+		local v95 = nil;
+		local v96 = nil;
+		local v97, v98, v99, v100, v101, v102, v103, v104, v105, v106, v107, v108, v109, v110, v111, v112, v113, v114, v115, v116, v117, v118, v119, v120, v121, v122, v123, v124, v125, v126, v127, v128, v129, v130, v131, v132, v133, v134, v135, v136, v137 = l__Events__11.GetStats:InvokeServer();
+		u4 = v97;
+		u18 = v98;
+		u19 = v99;
+		u20 = v100;
+		u21 = v101;
+		u22 = v102;
+		u23 = v103;
+		u24 = v104;
+		u3 = v105;
+		u25 = v106;
+		u10 = v107;
+		u26 = v108;
+		u27 = v109;
+		u28 = v110;
+		u29 = v111;
+		u30 = v112;
+		u31 = v113;
+		u32 = v114;
+		u33 = v115;
+		u34 = v116;
+		u35 = v117;
+		u36 = v118;
+		u37 = v119;
+		u38 = v120;
+		u39 = v121;
+		u40 = v122;
+		u41 = v123;
+		u42 = v124;
+		u43 = v125;
+		u44 = v126;
+		u45 = v127;
+		u46 = v128;
+		u47 = v129;
+		u48 = v130;
+		u49 = v131;
+		u50 = v132;
+		u5 = v133;
+		u13 = v134;
+		u51 = v135;
+		u2 = v136;
+		u52 = v137;
+		u53 = true;
+		v7.UpdateRadioMenu();
+		for v138, v139 in pairs(l__Gui__6.Shop.CoinsFrame.Scroll:GetChildren()) do
+			if v139:IsA("ImageButton") then
+				v139.Title.Text = v7.GiveCommas(math.floor(v139.StartAmount.Value * (u4 + 1)));
+			end;
+		end;
+		local l__Buttons__140 = l__Gui__6.Buttons;
+		local v141 = game.ReplicatedStorage.Backpacks:FindFirstChild(u19).Storage.Value;
+		local v142 = false;
+		for v143, v144 in pairs(u5) do
+			if v144 == "Infinite Inventory" then
+				v142 = true;
+			end;
+		end;
+		local v145 = BrickColor.new(u28);
+		l__Gui__6.Settings.ChangeColor.ImageColor3 = Color3.new(v145.Color.r + 0.1, v145.Color.g + 0.1, v145.Color.b + 0.1);
+		if v142 then
+			v141 = 999999999;
+		end;
+		l__Buttons__140.Coins.Amount.Text = v7.GiveCommas(u23);
+		l__Buttons__140.Rubies.Amount.Text = v7.GiveCommas(u29);
+		l__Gui__6.UpgradeShop.Coins.Amount.Text = v7.GiveCommas(u23);
+		l__Gui__6.UpgradeShop.Rubies.Amount.Text = v7.GiveCommas(u29);
+		if u19 == "Infinite" or v142 then
+			l__Buttons__140.Sand.Amount.Text = v7.GiveCommas(u18) .. " / \226\136\158";
+		else
+			l__Buttons__140.Sand.Amount.Text = v7.GiveCommas(u18) .. " / " .. v7.GiveCommas(v141 and 10);
+		end;
+		if u10 == true then
+			l__Gui__6.Settings.Sound.ImageColor3 = Color3.fromRGB(255, 87, 87);
+			l__Gui__6.Settings.Sound.Muted.Visible = true;
+			l__Gui__6.Settings.Sound.Playing.Visible = false;
+			for v146, v147 in pairs(v5) do
+				if string.find(v147.Name, "Theme") then
+					v147.Volume = 0;
+				end;
+			end;
+		else
+			l__Gui__6.Settings.Sound.ImageColor3 = Color3.fromRGB(0, 255, 0);
+			l__Gui__6.Settings.Sound.Muted.Visible = false;
+			l__Gui__6.Settings.Sound.Playing.Visible = true;
+			for v148, v149 in pairs(v5) do
+				if string.find(v149.Name, "Theme") then
+					v149.Volume = 0.1;
+				end;
+			end;
+		end;
+		if u26 == true then
+			l__Gui__6.Settings.SoundFX.ImageColor3 = Color3.fromRGB(255, 87, 87);
+			l__Gui__6.Settings.SoundFX.Muted.Visible = true;
+			l__Gui__6.Settings.SoundFX.Playing.Visible = false;
+			for v150, v151 in pairs(v5) do
+				if string.find(v151.Name, "Theme") == nil then
+					v151.Volume = 0;
+				end;
+			end;
+		else
+			l__Gui__6.Settings.SoundFX.ImageColor3 = Color3.fromRGB(0, 255, 0);
+			l__Gui__6.Settings.SoundFX.Muted.Visible = false;
+			l__Gui__6.Settings.SoundFX.Playing.Visible = true;
+			for v152, v153 in pairs(v5) do
+				if string.find(v153.Name, "Theme") == nil then
+					if v153.Name == "Ruby" then
+						v153.Volume = 0.1;
+					else
+						v153.Volume = 0.5;
+					end;
+				end;
+			end;
+		end;
+		if u27 == false then
+			l__Gui__6.Settings.ToggleNotifications.ImageColor3 = Color3.fromRGB(255, 87, 87);
+			l__Gui__6.Settings.ToggleNotifications.Muted.Visible = true;
+			l__Gui__6.Settings.ToggleNotifications.Playing.Visible = false;
+		else
+			l__Gui__6.Settings.ToggleNotifications.ImageColor3 = Color3.fromRGB(0, 255, 0);
+			l__Gui__6.Settings.ToggleNotifications.Muted.Visible = false;
+			l__Gui__6.Settings.ToggleNotifications.Playing.Visible = true;
+		end;
+		for v154, v155 in pairs(workspace.ShovelShopModels:GetChildren()) do
+			if v155:IsA("Model") and v155:FindFirstChild("Color") then
+				for v156, v157 in pairs(v155:GetChildren()) do
+					if v157.Name == "Color" then
+						v157.BrickColor = BrickColor.new(u28);
+					end;
+				end;
+			end;
+		end;
+		for v158, v159 in pairs(workspace.BackpackShopModels:GetChildren()) do
+			if v159:IsA("Model") and v159:FindFirstChild("Color") then
+				for v160, v161 in pairs(v159:GetChildren()) do
+					if v161.Name == "Color" then
+						v161.BrickColor = BrickColor.new(u28);
+					end;
+				end;
+			end;
+		end;
+		if l__Gui__6.UpgradeShop.Visible then
+			if u54 == "Shovel" then
+				v7.UpdateToShovels(u55);
+			elseif u54 == "Backpack" then
+				v7.UpdateToBackpacks(u55);
+			elseif u54 == "Pet" then
+				v7.UpdateToPets(u55);
+			end;
+		end;
+		local v162 = false;
+		for v163, v164 in pairs(u5) do
+			if v164 == "SellAnywhere" then
+				v162 = true;
+			end;
+		end;
+		if u49 == true and v162 then
+			l__Gui__6.Buttons.TeleportToSell.AutoSell.Toggle.ImageColor3 = Color3.fromRGB(9, 229, 101);
+			l__Gui__6.Buttons.TeleportToSell.AutoSell.Toggle.TextLabel.Text = "On";
+		else
+			l__Gui__6.Buttons.TeleportToSell.AutoSell.Toggle.ImageColor3 = Color3.fromRGB(255, 87, 87);
+			l__Gui__6.Buttons.TeleportToSell.AutoSell.Toggle.TextLabel.Text = "Off";
+		end;
+		local l__Frame__165 = l__Gui__6.Inventory.Inventory.Scroll.Frame;
+		local l__Frame__166 = l__Gui__6.Inventory.HatsInventory.Scroll.Frame;
+		for v167, v168 in pairs(l__Frame__165:GetChildren()) do
+			if v168:IsA("ImageButton") and v168.Visible == true then
+				u56[v168] = nil;
+				v168:Destroy();
+			end;
+		end;
+		for v169, v170 in pairs(l__Frame__166:GetChildren()) do
+			if v170:IsA("ImageButton") and v170.Visible == true then
+				u56[v170] = nil;
+				v170:Destroy();
+			end;
+		end;
+		local v171 = 0;
+		local v172 = 0;
+		local v173, v174, v175 = pairs(u51);
+		while true do
+			local v176 = nil;
+			local v177 = nil;
+			v177, v176 = v173(v174, v175);
+			if not v177 then
+				break;
+			end;
+			local v178 = game.ReplicatedStorage.Skins:FindFirstChild(v177);
+			local v179 = game.ReplicatedStorage.Hats:FindFirstChild(v177);
+			if v178 then
+				local v180 = l__Frame__165.Example:Clone();
+				v180.Visible = true;
+				v180.Name = v177;
+				v180.Img.Image = v178.Texture.Texture;
+				v180.Img.SkinName.Text = v177;
+				v180.ImageColor3 = GetRarityColor(v178.Rarity.Value);
+				v180.LayoutOrder = v178.Rarity.Value;
+				v180.Img.Num.Text = "x" .. v176;
+				u56[v180] = v180.MouseButton1Click:connect(function()
+					u57 = v178;
+					l__Gui__6.Inventory.ChooseEquip.Visible = true;
+					l__Gui__6.Inventory.ChooseEquipHat.Visible = false;
+				end);
+				v180.Parent = l__Frame__165;
+				v171 = v171 + 1;
+			elseif v179 then
+				local v181 = l__Frame__166.Example:Clone();
+				v181.Visible = true;
+				v181.Name = v177;
+				v181.Img.Image = v179.Texture.Texture;
+				v181.Img.SkinName.Text = string.sub(v177, 1, 12);
+				v181.ImageColor3 = GetRarityColor(v179.Rarity.Value);
+				v181.LayoutOrder = v179.Rarity.Value;
+				v181.Img.Num.Text = "x" .. v176;
+				v181.Img.Strength.Text = "+ " .. v7.GiveCommas(v179.Strength.Value);
+				u56[v181] = v181.MouseButton1Click:connect(function()
+					u58 = v179;
+					l__Gui__6.Inventory.ChooseEquip.Visible = false;
+					l__Gui__6.Inventory.ChooseEquipHat.Visible = true;
+				end);
+				v181.Parent = l__Frame__166;
+				v172 = v172 + 1;
+			end;
+			local v182 = l__Gui__6.Index.Skins.Frame:FindFirstChild(v177);
+			local v183 = l__Gui__6.Index.Hats.Frame:FindFirstChild(v177);
+			if v182 then
+				v182.Img.ImageColor3 = Color3.new(1, 1, 1);
+				v182.Img.ImageTransparency = 0;
+			elseif v183 then
+				v183.Img.ImageColor3 = Color3.new(1, 1, 1);
+				v183.Img.ImageTransparency = 0;
+			end;		
+		end;
+		local l__Parent__184 = l__Frame__166.Parent;
+		local v185 = math.floor(v172 / 8) + 1;
+		l__Parent__184.CanvasSize = UDim2.new(0, 0, v185, 0);
+		l__Parent__184.CanvasSize = UDim2.new(0, 0, v185, 0);
+		l__Frame__166.Size = UDim2.new(1, 0, 1 / (2 * v185), 0);
+		local l__Parent__186 = l__Frame__165.Parent;
+		local v187 = math.floor(v171 / 8) + 1;
+		l__Parent__186.CanvasSize = UDim2.new(0, 0, v187, 0);
+		l__Parent__186.CanvasSize = UDim2.new(0, 0, v187, 0);
+		l__Frame__165.Size = UDim2.new(1, 0, 1 / (2 * v187), 0);
+		local l__Crates__188 = l__Gui__6.Crates;
+		local l__Frame__189 = l__Gui__6.Inventory.Crates.Scroll.Frame;
+		if u30 > 0 then
+			l__Crates__188.SkinCratesFrame.Scroll.Tier1.NumberOwned.Text = "x" .. u30;
+			l__Frame__189.Tier1.Visible = true;
+			l__Frame__189.Tier1.Img.Num.Text = "x" .. u30;
+		else
+			l__Crates__188.SkinCratesFrame.Scroll.Tier1.NumberOwned.Text = "";
+			l__Frame__189.Tier1.Visible = false;
+		end;
+		if u31 > 0 then
+			l__Crates__188.SkinCratesFrame.Scroll.Tier2.NumberOwned.Text = "x" .. u31;
+			l__Frame__189.Tier2.Visible = true;
+			l__Frame__189.Tier2.Img.Num.Text = "x" .. u31;
+		else
+			l__Crates__188.SkinCratesFrame.Scroll.Tier2.NumberOwned.Text = "";
+			l__Frame__189.Tier2.Visible = false;
+		end;
+		if u32 > 0 then
+			l__Crates__188.SkinCratesFrame.Scroll.Tier3.NumberOwned.Text = "x" .. u32;
+			l__Frame__189.Tier3.Visible = true;
+			l__Frame__189.Tier3.Img.Num.Text = "x" .. u32;
+		else
+			l__Crates__188.SkinCratesFrame.Scroll.Tier3.NumberOwned.Text = "";
+			l__Frame__189.Tier3.Visible = false;
+		end;
+		if u33 > 0 then
+			l__Crates__188.SkinCratesFrame.Scroll.Tier4.NumberOwned.Text = "x" .. u33;
+			l__Frame__189.Tier4.Visible = true;
+			l__Frame__189.Tier4.Img.Num.Text = "x" .. u33;
+		else
+			l__Crates__188.SkinCratesFrame.Scroll.Tier4.NumberOwned.Text = "";
+			l__Frame__189.Tier4.Visible = false;
+		end;
+		if u34 > 0 then
+			l__Crates__188.SkinCratesFrame.Scroll.Tier5.NumberOwned.Text = "x" .. u34;
+			l__Frame__189.Tier5.Visible = true;
+			l__Frame__189.Tier5.Img.Num.Text = "x" .. u34;
+		else
+			l__Crates__188.SkinCratesFrame.Scroll.Tier5.NumberOwned.Text = "";
+			l__Frame__189.Tier5.Visible = false;
+		end;
+		if u35 > 0 then
+			l__Crates__188.SkinCratesFrame.Scroll.Tier6.NumberOwned.Text = "x" .. u35;
+			l__Frame__189.Tier6.Visible = true;
+			l__Frame__189.Tier6.Img.Num.Text = "x" .. u35;
+		else
+			l__Crates__188.SkinCratesFrame.Scroll.Tier6.NumberOwned.Text = "";
+			l__Frame__189.Tier6.Visible = false;
+		end;
+		if u36 > 0 then
+			l__Crates__188.HatCratesFrame.Scroll.Tier1Hat.NumberOwned.Text = "x" .. u36;
+			l__Frame__189.Tier1Hat.Visible = true;
+			l__Frame__189.Tier1Hat.Img.Num.Text = "x" .. u36;
+		else
+			l__Crates__188.HatCratesFrame.Scroll.Tier1Hat.NumberOwned.Text = "";
+			l__Frame__189.Tier1Hat.Visible = false;
+		end;
+		if u37 > 0 then
+			l__Crates__188.HatCratesFrame.Scroll.Tier2Hat.NumberOwned.Text = "x" .. u37;
+			l__Frame__189.Tier2Hat.Visible = true;
+			l__Frame__189.Tier2Hat.Img.Num.Text = "x" .. u37;
+		else
+			l__Crates__188.HatCratesFrame.Scroll.Tier2Hat.NumberOwned.Text = "";
+			l__Frame__189.Tier2Hat.Visible = false;
+		end;
+		if u38 > 0 then
+			l__Crates__188.HatCratesFrame.Scroll.Tier3Hat.NumberOwned.Text = "x" .. u38;
+			l__Frame__189.Tier3Hat.Visible = true;
+			l__Frame__189.Tier3Hat.Img.Num.Text = "x" .. u38;
+		else
+			l__Crates__188.HatCratesFrame.Scroll.Tier3Hat.NumberOwned.Text = "";
+			l__Frame__189.Tier3Hat.Visible = false;
+		end;
+		if u39 > 0 then
+			l__Crates__188.HatCratesFrame.Scroll.Tier4Hat.NumberOwned.Text = "x" .. u39;
+			l__Frame__189.Tier4Hat.Visible = true;
+			l__Frame__189.Tier4Hat.Img.Num.Text = "x" .. u39;
+		else
+			l__Crates__188.HatCratesFrame.Scroll.Tier4Hat.NumberOwned.Text = "";
+			l__Frame__189.Tier4Hat.Visible = false;
+		end;
+		if u40 > 0 then
+			l__Crates__188.HatCratesFrame.Scroll.Tier5Hat.NumberOwned.Text = "x" .. u40;
+			l__Frame__189.Tier5Hat.Visible = true;
+			l__Frame__189.Tier5Hat.Img.Num.Text = "x" .. u40;
+		else
+			l__Crates__188.HatCratesFrame.Scroll.Tier5Hat.NumberOwned.Text = "";
+			l__Frame__189.Tier5Hat.Visible = false;
+		end;
+		if u41 > 0 then
+			l__Crates__188.HatCratesFrame.Scroll.Tier6Hat.NumberOwned.Text = "x" .. u41;
+			l__Frame__189.Tier6Hat.Visible = true;
+			l__Frame__189.Tier6Hat.Img.Num.Text = "x" .. u41;
+		else
+			l__Crates__188.HatCratesFrame.Scroll.Tier6Hat.NumberOwned.Text = "";
+			l__Frame__189.Tier6Hat.Visible = false;
+		end;
+		v89 = l__Gui__6.Inventory.Crates;
+		if u30 + u31 + u32 + u33 + u34 + u35 + u36 + u37 + u38 + u39 + u40 + u41 <= 0 then
+			v89.Scroll.Visible = false;
+			v89.Out.Visible = true;
+		else
+			v89.Scroll.Visible = true;
+			v89.Out.Visible = false;
+		end;
+		if l__LocalPlayer__1:GetRankInGroup(3823645) >= 100 then
+			l__Gui__6.Buttons.AdminCommands.Visible = true;
+		else
+			l__Gui__6.Buttons.AdminCommands.Visible = false;
+		end;
+		local v190 = math.floor((u4 ^ 1.5 + 1) * 500000);
+		local v191 = 1 + 0.5 * u4;
+		local v192 = false;
+		for v193, v194 in pairs(u5) do
+			if v194 == "VIP" then
+				v192 = true;
+			end;
+		end;
+		if v192 then
+			v191 = v191 * 1;
+		end;
+		if l__LocalPlayer__1:IsInGroup(3823645) then
+			v191 = v191 + 0.1;
+		end;
+		l__Gui__6.Buttons.Multiplier.Amount.Text = v191;
+		l__Gui__6.Rebirth.Needed.Coins.Amount.Text = v7.GiveCommas(v190);
+		local v195 = game.ReplicatedStorage.Backpacks:FindFirstChild(u19).Storage.Value;
+		local v196 = false;
+		for v197, v198 in pairs(u5) do
+			if v198 == "Infinite Inventory" then
+				v196 = true;
+			end;
+		end;
+		if v196 then
+			v195 = 999999999;
+		end;
+		if l__Gui__6.Popups.BackpackFull.Visible then
+			if u18 == 0 then
+				l__Gui__6.Popups.BackpackFull.Visible = false;
+			elseif u18 < v195 then
+				l__Gui__6.Popups.BackpackFull.Visible = false;
+			end;
+		end;
+		local v199 = false;
+		for v200, v201 in pairs(u5) do
+			if v201 == "Private Island" then
+				v199 = true;
+			end;
+		end;
+		if v199 or u59 then
+			l__Gui__6.PrivateIslands.BuyButton.Visible = false;
+			l__Gui__6.PrivateIslands.JoinMine.Visible = true;
+		else
+			l__Gui__6.PrivateIslands.BuyButton.Visible = true;
+			l__Gui__6.PrivateIslands.JoinMine.Visible = false;
+		end;
+		local v202 = game.ReplicatedStorage.Skins:FindFirstChild(u45);
+		v90 = l__Gui__6.Inventory.Inventory.Backpack;
+		if v202 then
+			v90.Unequip.Visible = true;
+			v90.Img.Image = v202.Texture.Texture;
+		else
+			v90.Unequip.Visible = false;
+			v90.Img.Image = "rbxassetid://2556834731";
+		end;
+		local v203 = game.ReplicatedStorage.Skins:FindFirstChild(u46);
+		v91 = l__Gui__6.Inventory.Inventory.Tool;
+		if v203 then
+			v91.Unequip.Visible = true;
+			v91.Img.Image = v203.Texture.Texture;
+		else
+			v91.Unequip.Visible = false;
+			v91.Img.Image = "rbxassetid://2556834731";
+		end;
+		local v204 = game.ReplicatedStorage.Hats:FindFirstChild(u42);
+		v92 = l__Gui__6.Inventory.HatsInventory.Hat1;
+		if v204 then
+			v92.Unequip.Visible = true;
+			v92.Img.Image = v204.Texture.Texture;
+			v92.Img.Strength.Visible = true;
+			v92.Img.Strength.Text = "+ " .. v204.Strength.Value;
+		else
+			v92.Unequip.Visible = false;
+			v92.Img.Strength.Visible = false;
+			v92.Img.Image = "rbxassetid://2556834731";
+		end;
+		local v205 = game.ReplicatedStorage.Hats:FindFirstChild(u43);
+		v93 = l__Gui__6.Inventory.HatsInventory.Hat2;
+		if v205 then
+			v93.Unequip.Visible = true;
+			v93.Img.Image = v205.Texture.Texture;
+			v93.Img.Strength.Visible = true;
+			v93.Img.Strength.Text = "+ " .. v205.Strength.Value;
+		else
+			v93.Unequip.Visible = false;
+			v93.Img.Image = "rbxassetid://2556834731";
+			v93.Img.Strength.Visible = false;
+		end;
+		local v206 = game.ReplicatedStorage.Hats:FindFirstChild(u44);
+		v94 = l__Gui__6.Inventory.HatsInventory.Hat3;
+		if v206 then
+			v94.Unequip.Visible = true;
+			v94.Img.Image = v206.Texture.Texture;
+			v94.Img.Strength.Visible = true;
+			v94.Img.Strength.Text = "+ " .. v206.Strength.Value;
+		else
+			v94.Unequip.Visible = false;
+			v94.Img.Image = "rbxassetid://2556834731";
+			v94.Img.Strength.Visible = false;
+		end;
+		v95 = l__Gui__6.Inventory.HatsInventory.ToggleHats;
+		if u47 == true then
+			v95.Amount.Text = "Hats: On";
+			v95.ImageColor3 = Color3.fromRGB(9, 229, 101);
+		else
+			v95.Amount.Text = "Hats: Off";
+			v95.ImageColor3 = Color3.fromRGB(255, 87, 87);
+		end;
+		v96 = l__Gui__6.Trade.ToggleTrade;
+		if u48 == true then
+			v96.Amount.Text = "Enabled";
+			v96.ImageColor3 = Color3.fromRGB(9, 229, 101);
+		else
+			v96.Amount.Text = "Disabled";
+			v96.ImageColor3 = Color3.fromRGB(255, 87, 87);
+		end;
+		l__Events__11.UpdateLeaderstats:FireServer();
+	end);
+end;
+l__Events__11.UpdateStats.OnClientEvent:connect(function()
+	u60();
+end);
+function v7.UI_Update()
+	u60();
+end;
+local u61 = {};
+l__Events__11.ItemUnlocked.OnClientEvent:connect(function(p21)
+	u61[p21] = true;
+end);
+l__Events__11.BackpackFull.OnClientEvent:connect(function()
+	l__Gui__6.Popups.BackpackFull.Visible = true;
+	l__Sounds__4.Full:Play();
+end);
+local l__DailyRewardFrame__207 = l__Gui__6.Popups.DailyRewardFrame;
+local u62 = l__DailyRewardFrame__207;
+l__DailyRewardFrame__207.Close.MouseButton1Click:connect(function()
+	u62.Visible = false;
+end);
+l__Events__11.DailyRewardNotif.OnClientEvent:connect(function(p22)
+	while true do
+		wait(1);
+		if l__Gui__6.Popups.Welcome.Visible == false and l__Gui__6.Popups.ChooseColor.Visible == false then
+			break;
+		end;	
+	end;
+	local v208 = u62.Today:FindFirstChildOfClass("Frame");
+	if v208 then
+		v208:Destroy();
+	end;
+	local v209 = u62.Tomorrow:FindFirstChildOfClass("Frame");
+	if v209 then
+		v209:Destroy();
+	end;
+	(u62.DayHolder:FindFirstChild("Day" .. p22) or u62.DayHolder["Day6+"]):Clone().Parent = u62.Today;
+	(u62.DayHolder:FindFirstChild("Day" .. p22 + 1) or u62.DayHolder["Day6+"]):Clone().Parent = u62.Tomorrow;
+	if not v13 then
+		u62.Visible = true;
+	end;
+end);
+l__Events__11.MoneyEarned.OnClientEvent:connect(function(p23)
+	local v210 = l__Gui__6.Popups.Sell:Clone();
+	v210.Amount.Coin.Visible = true;
+	v210.Amount.Ruby.Visible = false;
+	v210.Parent = l__Gui__6.Popups;
+	v210.Amount.Text = "+" .. v7.GiveCommas(p23);
+	v210.Position = UDim2.new(0.5, 0, 0.5, 0);
+	v210.Visible = true;
+	l__Sounds__4.Coin:Play();
+	wait(1);
+	v210:TweenPosition(UDim2.new(0, l__Gui__6.Buttons.Coins.AbsolutePosition.X, 0, l__Gui__6.Buttons.Coins.AbsolutePosition.Y), "Out", "Quad", 1, true);
+	wait(0.5);
+	v210.Visible = false;
+	v210:Destroy();
+end);
+l__Events__11.RubiesEarned.OnClientEvent:connect(function(p24)
+	local v211 = l__Gui__6.Popups.Sell:Clone();
+	v211.Amount.Coin.Visible = false;
+	v211.Amount.Ruby.Visible = true;
+	v211.Parent = l__Gui__6.Popups;
+	v211.Amount.Text = "+" .. v7.GiveCommas(p24);
+	v211.Amount.TextColor3 = Color3.fromRGB(197, 36, 36);
+	v211.Position = UDim2.new(0.5, 0, 0.45, 0);
+	v211.Visible = true;
+	l__Sounds__4.Ruby:Play();
+	wait(1);
+	v211:TweenPosition(UDim2.new(0, l__Gui__6.Buttons.Rubies.AbsolutePosition.X, 0, l__Gui__6.Buttons.Rubies.AbsolutePosition.Y), "Out", "Quad", 1, true);
+	wait(0.5);
+	v211.Visible = false;
+	v211:Destroy();
+end);
+workspace.Settings.Msg.Changed:connect(function()
+	l__Gui__6.Popups.QuickMessage.TextLabel.Text = workspace.Settings.Msg.Value;
+end);
+spawn(function()
+	u60();
+end);
+while true do
+	u60 = wait;
+	u62 = 0.1;
+	u60(u62);
+	u60 = print;
+	u62 = "looking for stats";
+	u60(u62);
+	if u53 then
+		break;
+	end;
+end;
+u60 = function(p25)
+	local l__Position__212 = p25.Position;
+	local l__Size__63 = p25.Size;
+	p25.MouseEnter:connect(function()
+		l__Sounds__4.MouseOver:Play();
+		p25:TweenSize(l__Size__63, "Out", "Quad", 0.1, true);
+	end);
+	p25.MouseButton1Up:connect(function()
+		l__Sounds__4.MouseClick:Play();
+		p25:TweenSize(l__Size__63, "Out", "Quad", 0.1, true);
+	end);
+	p25.MouseLeave:connect(function()
+		p25:TweenSize(l__Size__63, "Out", "Quad", 0.1, true);
+	end);
+	local l__AbsoluteSize__64 = p25.AbsoluteSize;
+	local l__AbsolutePosition__65 = p25.AbsolutePosition;
+	p25.MouseButton1Down:connect(function()
+		l__Sounds__4.MouseDown:Play();
+		if p25.Parent.Parent.Name ~= "GamepassFrame" then
+			p25:TweenSize(UDim2.new(p25.Size.X.Scale, p25.Size.X.Offset, p25.Size.Y.Scale * 0.95, p25.Size.Y.Offset * 0.95), "Out", "Quad", 0.1, true);
+			local v213 = l__AbsoluteSize__64.X - p25.AbsoluteSize.X;
+			local v214 = l__AbsoluteSize__64.Y - p25.AbsoluteSize.Y;
+			local v215 = l__AbsolutePosition__65.X - p25.AbsolutePosition.X;
+			local v216 = l__AbsolutePosition__65.Y - p25.AbsolutePosition.Y;
+		end;
+	end);
+end;
+v7.ButtonEffects = u60;
+u62 = l__Gui__6.Popups;
+u60 = u62.DailyRewardFrame;
+u62 = v7.ButtonEffects;
+u62(u60.Close);
+u62 = l__Gui__6.WaitForChild;
+u62 = u62(l__Gui__6, "TeleportAnim");
+function v7.TeleportAnimDisappear()
+	u62.Visible = true;
+	u62.Cover.Visible = true;
+	u62.ImageLabel.Size = UDim2.new(0.1, 0, 0.1, 0);
+	wait(1);
+	u62.Cover.Visible = false;
+	u62.ImageLabel:TweenSize(UDim2.new(20, 0, 20, 0), "Out", "Quad", 1.5, true);
+	wait(1.5);
+end;
+function v7.TeleportAnimAppear()
+	u62.Visible = false;
+	u62.Cover.Visible = false;
+	u62.ImageLabel.Size = UDim2.new(20, 0, 20, 0);
+	u62.Visible = true;
+	wait(1);
+	u62.ImageLabel:TweenSize(UDim2.new(0.1, 0, 0.1, 0), "In", "Quad", 1.5, true);
+	wait(1.5);
+	u62.Cover.Visible = true;
+end;
+local u66 = nil;
+local l__PromptPurchase__67 = l__Gui__6.PromptPurchase;
+function v7.PromptPurchase(p26, p27, p28)
+	if not p27 then
+		u66 = nil;
+		l__PromptPurchase__67.Updates.Text = p26;
+		l__PromptPurchase__67.Price.Visible = false;
+		l__PromptPurchase__67.RubyPrice.Visible = false;
+		l__PromptPurchase__67.Price.Cost.Text = "";
+		l__PromptPurchase__67.Visible = true;
+		while true do
+			wait();
+			if l__PromptPurchase__67.Visible == false then
+				break;
+			end;
+			if u66 ~= nil then
+				break;
+			end;		
+		end;
+		l__PromptPurchase__67.Visible = false;
+		if u66 == true then
+			return true;
+		else
+			return false;
+		end;
+	end;
+	local v217 = u23;
+	if p28 then
+		v217 = u29;
+	end;
+	if not (p27 <= v217) then
+		if p28 then
+			l__Gui__6.NotEnoughRubies.Visible = true;
+			l__Sounds__4.Error:Play();
+			while true do
+				wait();
+				if l__Gui__6.NotEnoughRubies.Visible == false then
+					break;
+				end;			
+			end;
+			return false;
+		else
+			l__Gui__6.NotEnoughCoins.Visible = true;
+			l__Sounds__4.Error:Play();
+			while true do
+				wait();
+				if l__Gui__6.NotEnoughCoins.Visible == false then
+					break;
+				end;			
+			end;
+			return false;
+		end;
+	end;
+	u66 = nil;
+	l__PromptPurchase__67.Updates.Text = p26;
+	local v218 = l__PromptPurchase__67.Price;
+	if p28 then
+		v218 = l__PromptPurchase__67.RubyPrice;
+		l__PromptPurchase__67.Price.Visible = false;
+		l__PromptPurchase__67.RubyPrice.Visible = true;
+	else
+		l__PromptPurchase__67.Price.Visible = true;
+		l__PromptPurchase__67.RubyPrice.Visible = false;
+	end;
+	v218.Cost.Text = v7.GiveCommas(p27);
+	l__PromptPurchase__67.Visible = true;
+	while true do
+		wait();
+		if l__PromptPurchase__67.Visible == false then
+			break;
+		end;
+		if u66 ~= nil then
+			break;
+		end;	
+	end;
+	l__PromptPurchase__67.Visible = false;
+	if u66 ~= true then
+		return false;
+	end;
+	l__Sounds__4.CashRegister:Play();
+	return true;
+end;
+v7.ButtonEffects(l__PromptPurchase__67.No);
+v7.ButtonEffects(l__PromptPurchase__67.Yes);
+local l__NotEnoughCoins__219 = l__Gui__6.NotEnoughCoins;
+local l__NotEnoughRubies__220 = l__Gui__6.NotEnoughRubies;
+v7.ButtonEffects(l__NotEnoughCoins__219.Close);
+v7.ButtonEffects(l__NotEnoughCoins__219.BuyMore);
+v7.ButtonEffects(l__NotEnoughRubies__220.Close);
+v7.ButtonEffects(l__NotEnoughRubies__220.BuyMore);
+l__NotEnoughCoins__219.Close.MouseButton1Click:connect(function()
+	l__NotEnoughCoins__219.Visible = false;
+end);
+l__NotEnoughCoins__219.BuyMore.MouseButton1Click:connect(function()
+	l__NotEnoughCoins__219.Visible = false;
+	for v221, v222 in pairs(l__Gui__6.Shop:GetChildren()) do
+		if v222:IsA("ImageLabel") and v222.Name ~= "BKG" then
+			v222.Visible = false;
+			if v222.Name == "CoinsFrame" then
+				v222.Visible = true;
+			end;
+		end;
+	end;
+	l__Gui__6.Shop.Visible = true;
+	l__Gui__6.Crates.Visible = false;
+	l__Gui__6.Inventory.Visible = false;
+end);
+l__NotEnoughRubies__220.Close.MouseButton1Click:connect(function()
+	l__NotEnoughRubies__220.Visible = false;
+end);
+l__NotEnoughRubies__220.BuyMore.MouseButton1Click:connect(function()
+	l__NotEnoughRubies__220.Visible = false;
+	for v223, v224 in pairs(l__Gui__6.Shop:GetChildren()) do
+		if v224:IsA("ImageLabel") and v224.Name ~= "BKG" then
+			v224.Visible = false;
+			if v224.Name == "RubiesFrame" then
+				v224.Visible = true;
+			end;
+		end;
+	end;
+	l__Gui__6.Shop.Visible = true;
+	l__Gui__6.Crates.Visible = false;
+	l__Gui__6.Inventory.Visible = false;
+end);
+l__PromptPurchase__67.No.MouseButton1Click:connect(function()
+	u66 = false;
+end);
+l__PromptPurchase__67.Yes.MouseButton1Click:connect(function()
+	u66 = true;
+end);
+local l__Popups__225 = l__Gui__6.Popups;
+local l__Buttons__226 = l__Gui__6.Buttons;
+v7.ButtonEffects(l__Buttons__226.TeleportToSell);
+v7.ButtonEffects(l__Buttons__226.TeleportToSell.AutoSell.Toggle);
+l__Buttons__226.TeleportToSell.AutoSell.Toggle.MouseButton1Click:connect(function()
+	local v227 = false;
+	for v228, v229 in pairs(u5) do
+		if v229 == "SellAnywhere" then
+			v227 = true;
+		end;
+	end;
+	if not v227 then
+		l__MarketplaceService__8:PromptGamePassPurchase(l__LocalPlayer__1, game.ReplicatedStorage.Gamepasses.SellAnywhere.ID.Value);
+		return;
+	end;
+	u49 = not u49;
+	l__Events__11.ToggleAutoSell:FireServer();
+	if u49 == true and v227 then
+		l__Gui__6.Buttons.TeleportToSell.AutoSell.Toggle.ImageColor3 = Color3.fromRGB(9, 229, 101);
+		l__Gui__6.Buttons.TeleportToSell.AutoSell.Toggle.TextLabel.Text = "On";
+		return;
+	end;
+	l__Gui__6.Buttons.TeleportToSell.AutoSell.Toggle.ImageColor3 = Color3.fromRGB(255, 87, 87);
+	l__Gui__6.Buttons.TeleportToSell.AutoSell.Toggle.TextLabel.Text = "Off";
+end);
+local u68 = l__Popups__225.BackpackFull;
+l__Buttons__226.TeleportToSell.MouseButton1Click:connect(function()
+	u68.Visible = false;
+	if l__LocalPlayer__1 and l__LocalPlayer__1.Character then
+		if u6 == nil then
+			v7.TeleportToNearest("SellHut");
+			return;
+		end;
+	else
+		return;
+	end;
+	l__LocalPlayer__1.Character.HumanoidRootPart.CFrame = u6.SellBlock.Base.CFrame * CFrame.new(-2, 0, 0) * CFrame.Angles(math.rad(180), 0, 0) + Vector3.new(0, 3, 0);
+end);
+v7.ButtonEffects(l__Buttons__226.TeleportToSurface);
+l__Buttons__226.TeleportToSurface.MouseButton1Click:connect(function()
+	u68.Visible = false;
+	if l__LocalPlayer__1 and l__LocalPlayer__1.Character then
+		v7.TeleportToNearest("UpgradeHut");
+	end;
+end);
+v7.ButtonEffects(l__Buttons__226.Shop);
+l__Buttons__226.Shop.MouseButton1Click:connect(function()
+	for v230, v231 in pairs(l__Gui__6.Shop:GetChildren()) do
+		if v231:IsA("ImageLabel") and v231.Name ~= "BKG" then
+			v231.Visible = false;
+			if v231.Name == "GamepassFrame" then
+				v231.Visible = true;
+			end;
+		end;
+	end;
+	l__Gui__6.Shop.Visible = true;
+	l__Gui__6.Crates.Visible = false;
+	l__Gui__6.Inventory.Visible = false;
+end);
+v7.ButtonEffects(l__Buttons__226.Coins.BuyCoins);
+l__Buttons__226.Coins.BuyCoins.MouseButton1Click:connect(function()
+	for v232, v233 in pairs(l__Gui__6.Shop:GetChildren()) do
+		if v233:IsA("ImageLabel") and v233.Name ~= "BKG" then
+			v233.Visible = false;
+			if v233.Name == "CoinsFrame" then
+				v233.Visible = true;
+			end;
+		end;
+	end;
+	l__Gui__6.Shop.Visible = true;
+	l__Gui__6.Crates.Visible = false;
+	l__Gui__6.Inventory.Visible = false;
+end);
+v7.ButtonEffects(l__Gui__6.UpgradeShop.Coins.BuyCoins);
+l__Gui__6.UpgradeShop.Coins.BuyCoins.MouseButton1Click:connect(function()
+	for v234, v235 in pairs(l__Gui__6.Shop:GetChildren()) do
+		if v235:IsA("ImageLabel") and v235.Name ~= "BKG" then
+			v235.Visible = false;
+			if v235.Name == "CoinsFrame" then
+				v235.Visible = true;
+			end;
+		end;
+	end;
+	l__Gui__6.Shop.Visible = true;
+	l__Gui__6.Crates.Visible = false;
+	l__Gui__6.Inventory.Visible = false;
+end);
+v7.ButtonEffects(l__Buttons__226.Rubies.BuyRubies);
+l__Buttons__226.Rubies.BuyRubies.MouseButton1Click:connect(function()
+	for v236, v237 in pairs(l__Gui__6.Shop:GetChildren()) do
+		if v237:IsA("ImageLabel") and v237.Name ~= "BKG" then
+			v237.Visible = false;
+			if v237.Name == "RubiesFrame" then
+				v237.Visible = true;
+			end;
+		end;
+	end;
+	l__Gui__6.Shop.Visible = true;
+	l__Gui__6.Crates.Visible = false;
+	l__Gui__6.Inventory.Visible = false;
+end);
+v7.ButtonEffects(l__Gui__6.UpgradeShop.Rubies.BuyRubies);
+l__Gui__6.UpgradeShop.Rubies.BuyRubies.MouseButton1Click:connect(function()
+	for v238, v239 in pairs(l__Gui__6.Shop:GetChildren()) do
+		if v239:IsA("ImageLabel") and v239.Name ~= "BKG" then
+			v239.Visible = false;
+			if v239.Name == "RubiesFrame" then
+				v239.Visible = true;
+			end;
+		end;
+	end;
+	l__Gui__6.Shop.Visible = true;
+	l__Gui__6.Crates.Visible = false;
+	l__Gui__6.Inventory.Visible = false;
+end);
+v7.ButtonEffects(l__Gui__6.Shop.Close);
+l__Gui__6.Shop.Close.MouseButton1Click:connect(function()
+	l__Gui__6.Shop.Visible = false;
+end);
+local l__Buttons__240 = l__Gui__6.Shop.Buttons;
+v7.ButtonEffects(l__Buttons__240.Coins);
+v7.ButtonEffects(l__Buttons__240.Gamepass);
+v7.ButtonEffects(l__Buttons__240.Rubies);
+l__Buttons__240.Coins.MouseButton1Click:connect(function()
+	l__Gui__6.Shop.CoinsFrame.Visible = true;
+	l__Gui__6.Shop.GamepassFrame.Visible = false;
+	l__Gui__6.Shop.RubiesFrame.Visible = false;
+end);
+l__Buttons__240.Gamepass.MouseButton1Click:connect(function()
+	l__Gui__6.Shop.CoinsFrame.Visible = false;
+	l__Gui__6.Shop.GamepassFrame.Visible = true;
+	l__Gui__6.Shop.RubiesFrame.Visible = false;
+end);
+l__Buttons__240.Rubies.MouseButton1Click:connect(function()
+	l__Gui__6.Shop.CoinsFrame.Visible = false;
+	l__Gui__6.Shop.GamepassFrame.Visible = false;
+	l__Gui__6.Shop.RubiesFrame.Visible = true;
+end);
+for v241, v242 in pairs(l__Gui__6.Shop.CoinsFrame.Scroll:GetChildren()) do
+	if v242:IsA("ImageButton") then
+		v7.ButtonEffects(v242);
+		v242.MouseButton1Click:connect(function()
+			l__MarketplaceService__8:PromptProductPurchase(l__LocalPlayer__1, tonumber(v242.Name));
+		end);
+	end;
+end;
+for v243, v244 in pairs(l__Gui__6.Shop.RubiesFrame.Scroll:GetChildren()) do
+	if v244:IsA("ImageButton") then
+		v7.ButtonEffects(v244);
+		v244.MouseButton1Click:connect(function()
+			l__MarketplaceService__8:PromptProductPurchase(l__LocalPlayer__1, tonumber(v244.Name));
+		end);
+	end;
+end;
+for v245, v246 in pairs(l__Gui__6.Shop.GamepassFrame.Scroll:GetChildren()) do
+	if v246:IsA("ImageButton") then
+		v7.ButtonEffects(v246);
+		v246.MouseButton1Click:connect(function()
+			l__MarketplaceService__8:PromptGamePassPurchase(l__LocalPlayer__1, tonumber(v246.Name));
+		end);
+	end;
+end;
+v7.ButtonEffects(l__Gui__6.Settings.Sound);
+l__Gui__6.Settings.Sound.MouseButton1Click:connect(function()
+	l__Events__11.Mute:FireServer();
+	u10 = not u10;
+	if u10 == true then
+		l__Gui__6.Settings.Sound.ImageColor3 = Color3.fromRGB(255, 87, 87);
+		l__Gui__6.Settings.Sound.Muted.Visible = true;
+		l__Gui__6.Settings.Sound.Playing.Visible = false;
+		for v247, v248 in pairs(v5) do
+			if string.find(v248.Name, "Theme") then
+				v248.Volume = 0;
+			end;
+		end;
+		return;
+	end;
+	l__Gui__6.Settings.Sound.ImageColor3 = Color3.fromRGB(0, 255, 0);
+	l__Gui__6.Settings.Sound.Muted.Visible = false;
+	l__Gui__6.Settings.Sound.Playing.Visible = true;
+	for v249, v250 in pairs(v5) do
+		if string.find(v250.Name, "Theme") then
+			v250.Volume = 0.1;
+		end;
+	end;
+end);
+l__Gui__6.Settings.SoundFX.MouseButton1Click:connect(function()
+	l__Events__11.Mute:FireServer(true);
+	u26 = not u26;
+	if u26 == true then
+		l__Gui__6.Settings.SoundFX.ImageColor3 = Color3.fromRGB(255, 87, 87);
+		l__Gui__6.Settings.SoundFX.Muted.Visible = true;
+		l__Gui__6.Settings.SoundFX.Playing.Visible = false;
+		for v251, v252 in pairs(v5) do
+			if string.find(v252.Name, "Theme") == nil then
+				v252.Volume = 0;
+			end;
+		end;
+		return;
+	end;
+	l__Gui__6.Settings.SoundFX.ImageColor3 = Color3.fromRGB(0, 255, 0);
+	l__Gui__6.Settings.SoundFX.Muted.Visible = false;
+	l__Gui__6.Settings.SoundFX.Playing.Visible = true;
+	for v253, v254 in pairs(v5) do
+		if string.find(v254.Name, "Theme") == nil then
+			if v254.Name == "Ruby" then
+				v254.Volume = 0.1;
+			else
+				v254.Volume = 0.5;
+			end;
+		end;
+	end;
+end);
+local l__GiveReward__255 = l__Popups__225.GiveReward;
+v7.ButtonEffects(l__GiveReward__255.Close);
+local u69 = l__GiveReward__255;
+l__GiveReward__255.Close.MouseButton1Click:connect(function()
+	u69.Visible = false;
+end);
+local l__BackpackFull__256 = l__Popups__225.BackpackFull;
+v7.ButtonEffects(l__BackpackFull__256.Sell);
+local u70 = l__BackpackFull__256;
+l__BackpackFull__256.Sell.MouseButton1Click:connect(function()
+	u70.Visible = false;
+	if l__LocalPlayer__1 and l__LocalPlayer__1.Character then
+		v7.TeleportToNearest("SellHut");
+	end;
+end);
+v7.ButtonEffects(u70.Upgrade);
+u70.Upgrade.MouseButton1Click:connect(function()
+	u70.Visible = false;
+	if l__LocalPlayer__1 and l__LocalPlayer__1.Character then
+		v7.TeleportToNearest("UpgradeHut");
+	end;
+end);
+v7.ButtonEffects(u70.BuyInfinite);
+u70.BuyInfinite.MouseButton1Click:connect(function()
+	l__MarketplaceService__8:PromptGamePassPurchase(l__LocalPlayer__1, game.ReplicatedStorage.Gamepasses["Infinite Inventory"].ID.Value);
+end);
+v7.ButtonEffects(l__Gui__6.Buttons.Rebirth);
+l__Gui__6.Buttons.Rebirth.MouseButton1Click:connect(function()
+	l__Gui__6.Rebirth.Visible = true;
+end);
+v7.ButtonEffects(l__Gui__6.Rebirth.Rebirth);
+l__Gui__6.Rebirth.Rebirth.MouseButton1Click:connect(function()
+	local v257 = math.floor((u4 ^ 1.5 + 1) * 500000);
+	l__Gui__6.Rebirth.Visible = false;
+	if not (v257 <= u23) then
+		local v258 = v7.PromptPurchase("Rebirth?", v257);
+		return;
+	end;
+	l__Events__11.Rebirth:FireServer();
+end);
+v7.ButtonEffects(l__Gui__6.Rebirth.Close);
+l__Gui__6.Rebirth.Close.MouseButton1Click:connect(function()
+	l__Gui__6.Rebirth.Visible = false;
+end);
+local l__Settings__259 = l__Gui__6.Settings;
+v7.ButtonEffects(l__Buttons__226.ColorChange);
+v7.ButtonEffects(l__Buttons__226.Codes);
+v7.ButtonEffects(l__Buttons__226.Skins);
+v7.ButtonEffects(l__Buttons__226.Settings);
+l__Buttons__226.Settings.MouseButton1Click:connect(function()
+	l__Gui__6.Settings.Visible = true;
+end);
+v7.ButtonEffects(l__Buttons__226.AdminCommands);
+local u71 = l__Gui__6.ModeratorPanel;
+l__Buttons__226.AdminCommands.MouseButton1Click:connect(function()
+	u71.Visible = true;
+end);
+local u72 = {};
+local u73 = "";
+u71.Changed:connect(function()
+	if u71.Visible then
+		for v260, v261 in pairs(u71.Players:GetChildren()) do
+			if u72[v261] then
+				u72[v261]:disconnect();
+				v261:Destroy();
+			end;
+		end;
+		for v262, v263 in pairs(game.Players:GetChildren()) do
+			local v264 = u71.Players.Example:Clone();
+			v264.Visible = true;
+			v264.Name = v263.Name;
+			v264.PlrName.Text = v263.Name;
+			v264.Parent = u71.Players;
+			u72[v264] = v264.MouseButton1Click:connect(function()
+				u73 = v264.Name;
+				u71.ChooseAction.PlrChosen.Text = "Player: " .. v264.Name;
+				u71.ChooseAction.Visible = true;
+			end);
+		end;
+	end;
+end);
+local l__Send__265 = u71.Send;
+v7.ButtonEffects(l__Send__265);
+local l__TextBox__74 = u71.TextBox;
+l__Send__265.MouseButton1Click:connect(function()
+	if l__TextBox__74.Text ~= "" then
+		u73 = l__TextBox__74.Text;
+		u71.ChooseAction.PlrChosen.Text = "Player: " .. l__TextBox__74.Text;
+		u71.ChooseAction.Visible = true;
+	end;
+end);
+v7.ButtonEffects(u71.Close);
+v7.ButtonEffects(u71.ChooseAction.ResetStats);
+v7.ButtonEffects(u71.ChooseAction.Kick);
+v7.ButtonEffects(u71.ChooseAction.Ban);
+v7.ButtonEffects(u71.ChooseAction.Unban);
+v7.ButtonEffects(u71.ChooseAction.Teleport);
+v7.ButtonEffects(u71.ChooseAction.Close);
+u71.ChooseAction.Close.MouseButton1Click:connect(function()
+	u71.ChooseAction.Visible = false;
+end);
+u71.ChooseAction.Teleport.MouseButton1Click:connect(function()
+	if u73 ~= "" and v7.PromptPurchase("Teleport to " .. u73 .. "?") then
+		l__Events__11.AdminAction:FireServer("Teleport", u73);
+	end;
+	u71.ChooseAction.Visible = false;
+end);
+u71.ChooseAction.ResetStats.MouseButton1Click:connect(function()
+	if u73 ~= "" and v7.PromptPurchase("Reset " .. u73 .. "'s Data?") then
+		l__Events__11.AdminAction:FireServer("ResetStats", u73);
+	end;
+	u71.ChooseAction.Visible = false;
+end);
+u71.ChooseAction.Ban.MouseButton1Click:connect(function()
+	if u73 ~= "" and v7.PromptPurchase("Ban " .. u73 .. "?") then
+		l__Events__11.AdminAction:FireServer("Ban", u73);
+	end;
+	u71.ChooseAction.Visible = false;
+end);
+u71.ChooseAction.Kick.MouseButton1Click:connect(function()
+	if u73 ~= "" and v7.PromptPurchase("Kick " .. u73 .. "?") then
+		l__Events__11.AdminAction:FireServer("Kick", u73);
+	end;
+	u71.ChooseAction.Visible = false;
+end);
+u71.ChooseAction.Unban.MouseButton1Click:connect(function()
+	if u73 ~= "" and v7.PromptPurchase("Remove " .. u73 .. "'s ban ?") then
+		l__Events__11.AdminAction:FireServer("Unban", u73);
+	end;
+	u71.ChooseAction.Visible = false;
+end);
+u71.Close.MouseButton1Click:connect(function()
+	u71.Visible = false;
+end);
+l__Buttons__226.ColorChange.MouseButton1Click:connect(function()
+	l__Gui__6.Popups.ChooseColor.Visible = true;
+end);
+v7.ButtonEffects(l__Settings__259.Close);
+v7.ButtonEffects(l__Settings__259.ChangeColor);
+v7.ButtonEffects(l__Settings__259.ToggleNotifications);
+local u75 = l__Settings__259;
+l__Settings__259.Close.MouseButton1Click:connect(function()
+	u75.Visible = false;
+end);
+u75.ChangeColor.MouseButton1Click:connect(function()
+	u75.Visible = false;
+	l__Gui__6.Popups.ChooseColor.Visible = true;
+end);
+if u27 == false then
+	l__Gui__6.Settings.ToggleNotifications.ImageColor3 = Color3.fromRGB(255, 87, 87);
+	l__Gui__6.Settings.ToggleNotifications.Muted.Visible = true;
+	l__Gui__6.Settings.ToggleNotifications.Playing.Visible = false;
+else
+	l__Gui__6.Settings.ToggleNotifications.ImageColor3 = Color3.fromRGB(0, 255, 0);
+	l__Gui__6.Settings.ToggleNotifications.Muted.Visible = false;
+	l__Gui__6.Settings.ToggleNotifications.Playing.Visible = true;
+end;
+u75.ToggleNotifications.MouseButton1Click:connect(function()
+	if u27 then
+		l__Events__11.ChangeNotifications:FireServer(false);
+	else
+		l__Events__11.ChangeNotifications:FireServer(true);
+	end;
+	if u27 == false then
+		l__Gui__6.Settings.ToggleNotifications.ImageColor3 = Color3.fromRGB(255, 87, 87);
+		l__Gui__6.Settings.ToggleNotifications.Muted.Visible = true;
+		l__Gui__6.Settings.ToggleNotifications.Playing.Visible = false;
+		return;
+	end;
+	l__Gui__6.Settings.ToggleNotifications.ImageColor3 = Color3.fromRGB(0, 255, 0);
+	l__Gui__6.Settings.ToggleNotifications.Muted.Visible = false;
+	l__Gui__6.Settings.ToggleNotifications.Playing.Visible = true;
+end);
+u75.TextBox.Focused:connect(function()
+	if u75.TextBox.Text == "Type your feedback here, then press send!" then
+		u75.TextBox.Text = "";
+	end;
+end);
+local l__Codes__266 = l__Gui__6.Codes;
+local l__Send__267 = l__Codes__266.Send;
+v7.ButtonEffects(l__Buttons__226.Codes);
+l__Buttons__226.Codes.MouseButton1Click:connect(function()
+	l__Codes__266.Visible = true;
+end);
+if v13 then
+	l__Codes__266.CodeInfo.Visible = false;
+	l__Codes__266.CodeImg.Visible = false;
+else
+	l__Codes__266.CodeInfo.Visible = true;
+	l__Codes__266.CodeImg.Visible = true;
+end;
+if v13 then
+	l__Buttons__226.Codes.Playing.Visible = false;
+	l__Buttons__226.Codes.China.Visible = true;
+else
+	l__Buttons__226.Codes.Playing.Visible = true;
+	l__Buttons__226.Codes.China.Visible = false;
+end;
+l__Buttons__226.Skins.MouseButton1Click:connect(function()
+	l__Gui__6.Crates.Visible = false;
+	l__Gui__6.Inventory.Visible = true;
+	l__Gui__6.Shop.Visible = false;
+end);
+v7.ButtonEffects(l__Codes__266.Close);
+l__Codes__266.Close.MouseButton1Click:connect(function()
+	l__Codes__266.Visible = false;
+end);
+v7.ButtonEffects(l__Send__267);
+local l__TextBox__76 = l__Codes__266.TextBox;
+l__Send__267.MouseButton1Click:connect(function()
+	if l__TextBox__76.PlaceholderText ~= "Code Accepted!" and l__TextBox__76.PlaceholderText ~= "Not a valid code!" and l__TextBox__76.PlaceholderText ~= "Code already redeemed!" and l__TextBox__76.Text ~= "" then
+		local v268, v269 = l__Events__11.CheckCode:InvokeServer(string.lower(l__TextBox__76.Text));
+		if v268 then
+			local v270 = 0;
+			local v271 = 0;
+			local v272 = 0;
+			local v273 = 0;
+			local v274, v275, v276 = pairs(v269);
+			while true do
+				local v277 = nil;
+				local v278 = nil;
+				v278, v277 = v274(v275, v276);
+				if not v278 then
+					break;
+				end;
+				v276 = v278;
+				if v278 == "Coins" then
+					v270 = v270 + v277;
+				elseif v278 == "Rebirths" then
+					v271 = v271 + v277;
+				elseif v278 == "Rubies" then
+					v272 = v272 + v277;
+				elseif string.find(v278, "Crates") then
+					v273 = v273 + v277;
+				end;			
+			end;
+			l__TextBox__76.PlaceholderText = v268;
+			l__TextBox__76.Text = "";
+			if v268 == "Code accepted!" then
+				v7.GiveReward(v268, v270, v272, v271, v273);
+			else
+				l__Sounds__4.Error:Play();
+			end;
+			wait(4);
+			l__TextBox__76.PlaceholderText = "Type Code Here";
+			return;
+		else
+			l__Sounds__4.Error:Play();
+			return;
+		end;
+	end;
+	l__Sounds__4.Error:Play();
+end);
+local l__Islands__279 = l__Gui__6.Islands;
+v7.ButtonEffects(l__Islands__279.Close);
+v7.ButtonEffects(l__Islands__279.ViewMap);
+v7.ButtonEffects(l__Islands__279.PrivateIslands);
+local u77 = 0;
+l__Islands__279.Close.MouseButton1Click:connect(function()
+	u77 = 60;
+	l__Islands__279.Visible = false;
+	v7.TeleportToNearest("IslandBox");
+end);
+l__Islands__279.PrivateIslands.MouseButton1Click:connect(function()
+	l__Islands__279.Visible = false;
+	l__Gui__6.PrivateIslands.Visible = true;
+end);
+l__Islands__279.ViewMap.MouseButton1Click:connect(function()
+	l__Islands__279.Visible = false;
+end);
+local l__PrivateIslands__280 = l__Gui__6.PrivateIslands;
+v7.ButtonEffects(l__PrivateIslands__280.Close);
+v7.ButtonEffects(l__PrivateIslands__280.BuyButton);
+v7.ButtonEffects(l__PrivateIslands__280.JoinMine);
+l__PrivateIslands__280.Close.MouseButton1Click:connect(function()
+	u77 = 60;
+	l__PrivateIslands__280.Visible = false;
+	v7.TeleportToNearest("IslandBox");
+end);
+l__PrivateIslands__280.BuyButton.MouseButton1Click:connect(function()
+	l__MarketplaceService__8:PromptGamePassPurchase(l__LocalPlayer__1, game.ReplicatedStorage.Gamepasses["Private Island"].ID.Value);
+end);
+l__PrivateIslands__280.JoinMine.MouseButton1Click:connect(function()
+	u77 = 90;
+	l__PrivateIslands__280.Visible = false;
+	l__Events__11.JoinIsland:FireServer(l__LocalPlayer__1.Name);
+end);
+v7.ButtonEffects(l__Gui__6.Buttons.LeaveIsland);
+l__Gui__6.Buttons.LeaveIsland.MouseButton1Click:connect(function()
+	l__Events__11.LeaveIsland:FireServer(l__LocalPlayer__1.Name);
+end);
+local u78 = {};
+function v7.UpdateFriendIslands()
+	local l__ScrollingFrame__281 = l__Gui__6.PrivateIslands.ScrollingFrame;
+	for v282, v283 in pairs(l__ScrollingFrame__281:GetChildren()) do
+		if v283:IsA("Frame") and v283.Visible then
+			local v284 = game.Players:FindFirstChild(v283.Name);
+			if v284 then
+				local u79 = false;
+				pcall(function()
+					if l__LocalPlayer__1:IsFriendsWith(v284.UserId) then
+						u79 = true;
+					end;
+				end);
+				if not u79 then
+					u78[v283] = nil;
+					v283:Destroy();
+				end;
+			else
+				u78[v283] = nil;
+				v283:Destroy();
+			end;
+		end;
+	end;
+	local v285, v286, v287 = pairs(game.Players:GetChildren());
+	while true do
+		local v288, v289 = v285(v286, v287);
+		if not v288 then
+			break;
+		end;
+		local v290 = false;
+		for v291, v292 in pairs(v15) do
+			if v292.OwnerName.Value == v289.Name then
+				v290 = true;
+			end;
+		end;
+		local u80 = false;
+		pcall(function()
+			if l__LocalPlayer__1:IsFriendsWith(v289.UserId) then
+				u80 = true;
+			end;
+		end);
+		if u80 and l__ScrollingFrame__281:FindFirstChild(v289.Name) == nil and v290 == true and l__LocalPlayer__1.Name ~= v289.Name then
+			local v293 = l__ScrollingFrame__281.Example:Clone();
+			v293.Name = v289.Name;
+			v293.Visible = true;
+			v293.TextLabel.Text = v289.Name;
+			v293.Parent = l__ScrollingFrame__281;
+			u78[v293] = v293.Join.MouseButton1Click:connect(function()
+				u77 = 90;
+				l__PrivateIslands__280.Visible = false;
+				l__Events__11.JoinIsland:FireServer(v293.Name);
+			end);
+		end;	
+	end;
+end;
+v7.UpdateFriendIslands();
+function v7.UpgradeMode()
+	l__Gui__6.SelectUpgradeCategory.Visible = true;
+	game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, false);
+	l__Gui__6.Buttons.Visible = false;
+	l__Gui__6.Cursor.Visible = false;
+	l__Gui__6.Popups.Visible = false;
+	l__Gui__6.Shop.Visible = false;
+	l__Gui__6.Crates.Visible = false;
+	l__Gui__6.Inventory.Visible = false;
+	while true do
+		wait();
+		if l__Gui__6.SelectUpgradeCategory.Visible == false then
+			break;
+		end;	
+	end;
+	if u54 ~= "" then
+		l__Gui__6.UpgradeShop.Visible = true;
+	end;
+end;
+function v7.NormalMode(p29)
+	u77 = 60;
+	v7.ResetCamera();
+	l__Gui__6.Buttons.Visible = true;
+	l__Gui__6.Popups.Visible = true;
+	if p29 ~= nil then
+		if p29 ~= nil and p29 == true and l__LocalPlayer__1 and l__LocalPlayer__1.Character then
+			v7.TeleportToNearest("UpgradeHut");
+		end;
+	elseif l__LocalPlayer__1 and l__LocalPlayer__1.Character then
+		v7.TeleportToNearest("UpgradeHut");
+	end;
+	l__Gui__6.UpgradeShop.Visible = false;
+	l__Gui__6.SelectUpgradeCategory.Visible = false;
+	game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, true);
+end;
+local l__CurrentCamera__81 = workspace.CurrentCamera;
+function v7.ResetCamera()
+	l__CurrentCamera__81.CameraSubject = game.Players.LocalPlayer.Character.Humanoid;
+	l__CurrentCamera__81.CameraType = "Custom";
+end;
+v7.ResetCamera();
+function v7.TweenCamera(p30, p31)
+	l__CurrentCamera__81.CameraType = Enum.CameraType.Scriptable;
+	if (p30.p - l__CurrentCamera__81.CFrame.p).magnitude < 20 then
+		l__TweenService__12:Create(l__CurrentCamera__81, TweenInfo.new(1, Enum.EasingStyle.Quint), {
+			CFrame = CFrame.new(p30.p, p31.p)
+		}):Play();
+		return;
+	end;
+	l__TweenService__12:Create(l__CurrentCamera__81, TweenInfo.new(0, Enum.EasingStyle.Quint), {
+		CFrame = CFrame.new(p30.p, p31.p)
+	}):Play();
+end;
+local l__ChooseColor__82 = l__Gui__6.Popups.ChooseColor;
+function v7.ChooseColor()
+	l__ChooseColor__82.Visible = true;
+end;
+u68 = l__ChooseColor__82.GetChildren;
+local v294, u68, v295 = pairs(u68(l__ChooseColor__82));
+while true do
+	u69 = v294;
+	u70 = u68;
+	u75 = v295;
+	u69, u70 = u69(u70, u75);
+	if not u69 then
+		break;
+	end;
+	v295 = u69;
+	u71 = u70;
+	u75 = u70.IsA;
+	u75 = u75(u71, "ImageButton");
+	if u75 then
+		u75 = u70.Name;
+		if u75 ~= "BlockBKG" then
+			u75 = v7.ButtonEffects;
+			u71 = u70;
+			u75(u71);
+			u75 = u70.MouseButton1Click;
+			u71 = u75;
+			u75 = u75.connect;
+			u75(u71, function()
+				if u70.Name ~= "Close" then
+					l__Events__11.ChooseColor:FireServer(u70.Name);
+				end;
+				l__ChooseColor__82.Visible = false;
+			end);
+		end;
+	end;
+end;
+u68 = l__Gui__6.Buttons.Index;
+u69 = u68;
+v7.ButtonEffects(u69);
+local l__MouseButton1Click__296 = u68.MouseButton1Click;
+local u83 = l__Gui__6.Index;
+u70 = function()
+	u83.Visible = true;
+end;
+u69 = l__MouseButton1Click__296;
+l__MouseButton1Click__296.connect(u69, u70);
+u69 = u83.Buttons;
+local l__Chests__297 = u69.Chests;
+u69 = v7.ButtonEffects;
+u70 = l__Chests__297;
+u69(u70);
+u69 = l__Chests__297.MouseButton1Click;
+u75 = function()
+	u83.Hats.Visible = false;
+	u83.Skins.Visible = false;
+	u83.Scroll.Visible = true;
+end;
+u70 = u69;
+u69 = u69.connect;
+u69(u70, u75);
+u70 = u83.Buttons;
+u69 = u70.Hats;
+u70 = v7.ButtonEffects;
+u75 = u69;
+u70(u75);
+u70 = u69.MouseButton1Click;
+u71 = function()
+	u83.Hats.Visible = true;
+	u83.Skins.Visible = false;
+	u83.Scroll.Visible = false;
+end;
+u75 = u70;
+u70 = u70.connect;
+u70(u75, u71);
+u75 = u83.Buttons;
+u70 = u75.Skins;
+u75 = v7.ButtonEffects;
+u71 = u70;
+u75(u71);
+u75 = u70.MouseButton1Click;
+u71 = u75;
+u75 = u75.connect;
+u75(u71, function()
+	u83.Hats.Visible = false;
+	u83.Skins.Visible = true;
+	u83.Scroll.Visible = false;
+end);
+u71 = game.ReplicatedStorage;
+u75 = u71.Chests;
+u71 = u75;
+u75 = u75.GetChildren;
+u75 = u75(u71);
+u71 = game.ReplicatedStorage.OldChests;
+u71 = u71.GetChildren;
+u71 = u71(u71);
+for v298, v299 in pairs(u71) do
+	table.insert(u75, v299);
+end;
+local v300 = {};
+local u84 = u83.ChestInfo;
+local function v301(p32)
+	local v302 = p32:FindFirstChildOfClass("Decal");
+	if v302 then
+		u84.ChestPic.Image = v302.Texture;
+		if u52[p32.Name] then
+			u84.ChestPic.ImageColor3 = Color3.new(1, 1, 1);
+			u84.ChestPic.ImageTransparency = 0;
+		else
+			u84.ChestPic.ImageColor3 = Color3.new(0, 0, 0);
+			u84.ChestPic.ImageTransparency = 0;
+		end;
+	end;
+	u84.Reward.Coins.Amount.Text = v7.GiveCommas(p32.Coins.Min.Value) .. " - " .. v7.GiveCommas(p32.Coins.Max.Value);
+	u84.Reward.Rubies.Amount.Text = v7.GiveCommas(p32.Rubies.Min.Value) .. " - " .. v7.GiveCommas(p32.Rubies.Max.Value);
+	u84.ChestName.Text = p32.Name;
+	local v303 = p32:FindFirstChildOfClass("Part");
+	if v303 then
+		u84.ChestName.TextColor3 = v303.Color;
+	end;
+	if p32.SpawnDepth.Max.Value >= 999999 then
+		u84.Depth.Text = v7.GiveCommas(p32.SpawnDepth.Min.Value) .. " - INF";
+	else
+		u84.Depth.Text = v7.GiveCommas(p32.SpawnDepth.Min.Value) .. " - " .. v7.GiveCommas(p32.SpawnDepth.Max.Value);
+	end;
+	u84.Health.Text = v7.GiveCommas(p32.Health.Value);
+	u84.SpawnChance.Text = p32.SpawnChance.Value .. "%";
+	if p32.Parent == game.ReplicatedStorage.OldChests then
+		u84.Limited.Visible = true;
+	else
+		u84.Limited.Visible = false;
+	end;
+	u84.Visible = true;
+end;
+local v304, v305, v306 = pairs(u75);
+while true do
+	local v307, v308 = v304(v305, v306);
+	if not v307 then
+		break;
+	end;
+	local v309 = u83.Scroll.Frame.Example:Clone();
+	v309.Visible = true;
+	v309.Name = v308.Name;
+	v309.Title.Text = v308.Name;
+	v309.LayoutOrder = v308.SpawnChance.Value * 1000;
+	local v310 = v308:FindFirstChildOfClass("Part");
+	if v310 then
+		v309.Title.TextColor3 = v310.Color;
+	end;
+	local v311 = v308:FindFirstChildOfClass("Decal");
+	if v311 then
+		v309.ImageLabel.Image = v311.Texture;
+		if u52[v308.Name] then
+			v309.ImageLabel.ImageColor3 = Color3.new(1, 1, 1);
+			v309.ImageLabel.ImageTransparency = 0;
+		else
+			v309.ImageLabel.ImageColor3 = Color3.new(0, 0, 0);
+			v309.ImageLabel.ImageTransparency = 0.5;
+		end;
+	end;
+	v309.Parent = u83.Scroll.Frame;
+	v300[v309] = v309.MouseButton1Click:connect(function()
+		v301(v308);
+	end);
+end;
+local l__Frame__312 = u83.Scroll.Frame;
+local v313 = math.floor(#u75 / 6) + 1;
+l__Frame__312.Parent.CanvasSize = UDim2.new(0, 0, v313, 0);
+l__Frame__312.Size = UDim2.new(1, 0, 1 / (1 / l__Frame__312.Size.Y.Scale * v313), 0);
+local v314 = 0;
+local v315 = 0;
+function TableSort(p33, p34)
+	if p33.Strength.Value < p34.Strength.Value then
+		return true;
+	end;
+	return false;
+end;
+function TableSort2(p35, p36)
+	if p35.Rarity.Value < p36.Rarity.Value then
+		return true;
+	end;
+	return false;
+end;
+local v316 = game.ReplicatedStorage.Hats:GetChildren();
+local v317 = game.ReplicatedStorage.Skins:GetChildren();
+table.sort(v316, TableSort);
+table.sort(v317, TableSort2);
+local l__Frame__318 = l__Gui__6.Index.Hats.Frame;
+local l__Frame__319 = l__Gui__6.Index.Skins.Frame;
+for v320, v321 in pairs(v316) do
+	local v322 = l__Frame__318.Example:Clone();
+	v322.Visible = true;
+	v322.Name = v321.Name;
+	v322.Img.Image = v321.Texture.Texture;
+	v322.Img.SkinName.Text = string.sub(v321.Name, 1, 20);
+	v322.ImageColor3 = GetRarityColor(v321.Rarity.Value);
+	v322.Img.ImageColor3 = Color3.new(0, 0, 0);
+	v322.Img.ImageTransparency = 0.5;
+	v322.LayoutOrder = v321.Rarity.Value;
+	v322.Img.Num.Text = "";
+	v322.Img.Strength.Text = "+ " .. v7.GiveCommas(v321.Strength.Value);
+	v322.Parent = l__Frame__318;
+	v315 = v315 + 1;
+end;
+for v323, v324 in pairs(v317) do
+	local v325 = l__Frame__319.Example:Clone();
+	v325.Visible = true;
+	v325.Name = v324.Name;
+	v325.Img.Image = v324.Texture.Texture;
+	v325.Img.SkinName.Text = v324.Name;
+	v325.ImageColor3 = GetRarityColor(v324.Rarity.Value);
+	v325.LayoutOrder = v324.Rarity.Value;
+	v325.Img.Num.Text = "";
+	v325.Img.ImageColor3 = Color3.new(0.25, 0.25, 0.25);
+	v325.Img.ImageTransparency = 0.5;
+	v325.Parent = l__Frame__319;
+	v314 = v314 + 1;
+end;
+local l__Parent__326 = l__Frame__318.Parent;
+local v327 = math.floor(v315 / 6) + 1;
+l__Parent__326.CanvasSize = UDim2.new(0, 0, v327, 0);
+l__Parent__326.CanvasSize = UDim2.new(0, 0, v327, 0);
+l__Frame__318.Size = UDim2.new(1, 0, 1 / (2 * v327), 0);
+local l__Parent__328 = l__Frame__319.Parent;
+local v329 = math.floor(v314 / 6) + 1;
+l__Parent__328.CanvasSize = UDim2.new(0, 0, v329, 0);
+l__Parent__328.CanvasSize = UDim2.new(0, 0, v329, 0);
+l__Frame__319.Size = UDim2.new(1, 0, 1 / (2 * v329), 0);
+v7.UI_Update();
+local l__Close__330 = u83.Close;
+v7.ButtonEffects(l__Close__330);
+l__Close__330.MouseButton1Click:connect(function()
+	u83.Visible = false;
+end);
+local l__Close__331 = u84.Close;
+v7.ButtonEffects(l__Close__331);
+l__Close__331.MouseButton1Click:connect(function()
+	u84.Visible = false;
+end);
+u83 = false;
+u68 = function(p37)
+	local v332 = "Skins";
+	if string.find(p37.Name, "Hat") then
+		v332 = "Hats";
+	end;
+	local v333 = math.random(1, 10000) <= 1 * p37.PercentOdds["7"].Value * 1;
+	local v334 = math.random(1, 1000) <= 10 * p37.PercentOdds["6"].Value * 1;
+	local v335 = math.random(1, 1000) <= 10 * p37.PercentOdds["5"].Value * 1;
+	local v336 = math.random(1, 1000) <= 10 * p37.PercentOdds["4"].Value * 1;
+	local v337 = math.random(1, 1000) <= 10 * p37.PercentOdds["3"].Value;
+	local v338 = math.random(1, 1000) <= 10 * p37.PercentOdds["2"].Value;
+	local v339 = math.random(1, 1000) <= 10 * p37.PercentOdds["1"].Value;
+	local v340 = {};
+	if v333 then
+		for v341, v342 in pairs(game.ReplicatedStorage[v332]:GetChildren()) do
+			if v342.Rarity.Value == 6 then
+				table.insert(v340, v342);
+			end;
+		end;
+	elseif v334 or p37.PercentOdds["5"].Value == 0 then
+		for v343, v344 in pairs(game.ReplicatedStorage[v332]:GetChildren()) do
+			if v344.Rarity.Value == 6 then
+				table.insert(v340, v344);
+			end;
+		end;
+	elseif v335 or p37.PercentOdds["4"].Value == 0 then
+		for v345, v346 in pairs(game.ReplicatedStorage[v332]:GetChildren()) do
+			if v346.Rarity.Value == 5 then
+				table.insert(v340, v346);
+			end;
+		end;
+	elseif v336 or p37.PercentOdds["3"].Value == 0 then
+		for v347, v348 in pairs(game.ReplicatedStorage[v332]:GetChildren()) do
+			if v348.Rarity.Value == 4 then
+				table.insert(v340, v348);
+			end;
+		end;
+	elseif v337 or p37.PercentOdds["2"].Value == 0 then
+		for v349, v350 in pairs(game.ReplicatedStorage[v332]:GetChildren()) do
+			if v350.Rarity.Value == 3 then
+				table.insert(v340, v350);
+			end;
+		end;
+	elseif v338 or p37.PercentOdds["1"].Value == 0 then
+		for v351, v352 in pairs(game.ReplicatedStorage[v332]:GetChildren()) do
+			if v352.Rarity.Value == 2 then
+				table.insert(v340, v352);
+			end;
+		end;
+	else
+		if not v339 then
+
+		end;
+		for v353, v354 in pairs(game.ReplicatedStorage[v332]:GetChildren()) do
+			if v354.Rarity.Value == 1 then
+				table.insert(v340, v354);
+			end;
+		end;
+	end;
+	return v340[math.random(1, #v340)];
+end;
+PickRandom = u68;
+u68 = v7.ButtonEffects;
+u70 = l__Gui__6.Inventory;
+u69 = u70.CrateSpinner;
+u68(u69.Skip);
+u70 = l__Gui__6.Inventory;
+u69 = u70.CrateSpinner;
+u68 = u69.Skip.MouseButton1Click;
+u69 = function()
+	local v355 = false;
+	for v356, v357 in pairs(u5) do
+		if v357 == "Skip" then
+			v355 = true;
+		end;
+	end;
+	if v355 then
+		u83 = true;
+		return;
+	end;
+	l__MarketplaceService__8:PromptGamePassPurchase(l__LocalPlayer__1, game.ReplicatedStorage.Gamepasses.Skip.ID.Value);
+end;
+u68 = u68.connect;
+u68(u68, u69);
+u68 = function(p38, p39, p40)
+	u83 = false;
+	local v358 = false;
+	local l__CrateSpinner__359 = l__Gui__6.Inventory:WaitForChild("CrateSpinner");
+	for v360, v361 in pairs(l__CrateSpinner__359.Spinner.Frame:GetChildren()) do
+		if v361:IsA("Frame") and v361.Visible then
+			v361:Destroy();
+		end;
+	end;
+	l__CrateSpinner__359.Spinner.Frame.Position = UDim2.new(0.5, 0, 0, 0);
+	l__CrateSpinner__359.CrateName.Text = p38.CaseName.Value;
+	for v362 = 1, 55 do
+		local v363 = PickRandom(p38);
+		if v362 == 50 then
+			v363 = p39;
+		end;
+		local v364 = l__CrateSpinner__359.Spinner.Frame.Example:Clone();
+		if string.len(v363.Name) > 16 then
+			v364.SkinName.Text = string.sub(v363.Name, 1, 12);
+		else
+			v364.SkinName.Text = v363.Name;
+		end;
+		v364.Name = v363.Name;
+		v364.Frame.BKg.ImageColor3 = GetRarityColor(v363.Rarity.Value);
+		v364.Frame.ImageLabel.Image = v363.Texture.Texture;
+		v364.Parent = l__CrateSpinner__359.Spinner.Frame;
+		v364.Visible = true;
+	end;
+	l__CrateSpinner__359.Visible = true;
+	local v365 = l__CrateSpinner__359.Spinner.Frame.Example.AbsoluteSize.X + 5;
+	local v366 = tick();
+	local v367 = false;
+	l__CrateSpinner__359.Spinner.Frame:TweenPosition(UDim2.new(0.5, v365 * -49, 0, 0), "Out", "Quint", 9.25, true);
+	lastP = l__CrateSpinner__359.Spinner.Frame.Position.X.Offset;
+	while true do
+		wait();
+		if v365 <= math.abs(l__CrateSpinner__359.Spinner.Frame.Position.X.Offset - lastP) then
+			lastP = l__CrateSpinner__359.Spinner.Frame.Position.X.Offset;
+			local v368 = l__Sounds__4.Tick:Clone();
+			v368.Parent = l__Sounds__4;
+			v368:Play();
+			game.Debris:AddItem(v368, 2);
+		end;
+		if v367 == false and u83 then
+			v367 = true;
+			v358 = true;
+			l__CrateSpinner__359.Spinner.Frame:TweenPosition(UDim2.new(0.5, v365 * -49, 0, 0), "Out", "Quint", 0.01, true);
+		end;
+		if tick() - v366 >= 3 and u83 then
+			break;
+		end;
+		if tick() - v366 >= 9.25 then
+			break;
+		end;
+		if l__CrateSpinner__359.Visible == false then
+			break;
+		end;
+		if v358 == true then
+			break;
+		end;	
+	end;
+	if p40 then
+		l__CrateSpinner__359.Subtitle.Text = "Duplicate Skin + " .. math.floor(p38.RubyCost.Value / 2 + 0.5) .. " Rubies";
+	end;
+	if v358 then
+		wait(1);
+	else
+		wait(1.5);
+	end;
+	l__CrateSpinner__359.Subtitle.Text = "Opening...";
+	l__CrateSpinner__359.Visible = false;
+end;
+v7.OpenCase = u68;
+u68 = l__Events__11.ReceiveOpenCrate.OnClientEvent;
+u69 = function(p41, p42, p43)
+	v7.OpenCase(p41, p42, p43);
+end;
+u68 = u68.connect;
+u68(u68, u69);
+u68 = l__Gui__6.Crates;
+u69 = u68.Close;
+v7.ButtonEffects(u69);
+u69 = u68.Close;
+local l__MouseButton1Click__369 = u69.MouseButton1Click;
+u70 = function()
+	u68.Visible = false;
+end;
+u69 = l__MouseButton1Click__369;
+l__MouseButton1Click__369.connect(u69, u70);
+local l__Buttons__370 = u68.Buttons;
+u69 = l__Buttons__370.HatCrates;
+u70 = l__Buttons__370.SkinCrates;
+u75 = v7.ButtonEffects;
+u71 = u69;
+u75(u71);
+u75 = u69.MouseButton1Click;
+u71 = u75;
+u75 = u75.connect;
+u75(u71, function()
+	u68.SkinCratesFrame.Visible = false;
+	u68.HatCratesFrame.Visible = true;
+end);
+u75 = v7.ButtonEffects;
+u71 = u70;
+u75(u71);
+u75 = u70.MouseButton1Click;
+u71 = u75;
+u75 = u75.connect;
+u75(u71, function()
+	u68.SkinCratesFrame.Visible = true;
+	u68.HatCratesFrame.Visible = false;
+end);
+u75 = nil;
+u71 = nil;
+u84 = 0;
+local l__CheckoutFrame__371 = u68.CheckoutFrame;
+local l__GiftTo__372 = u68.GiftTo;
+v7.ButtonEffects(l__GiftTo__372.Close);
+l__GiftTo__372.Close.MouseButton1Click:connect(function()
+	l__GiftTo__372.Visible = false;
+end);
+v7.ButtonEffects(l__CheckoutFrame__371.Close);
+l__CheckoutFrame__371.Close.MouseButton1Click:connect(function()
+	l__CheckoutFrame__371.Visible = false;
+end);
+local u85 = {};
+function v7.ChoosePlayerToGift()
+	l__CheckoutFrame__371.Visible = false;
+	local v373 = Color3.fromRGB(9, 229, 101);
+	local v374 = Color3.fromRGB(0, 170, 255);
+	for v375, v376 in pairs(l__GiftTo__372.Players:GetChildren()) do
+		if v376:IsA("ImageButton") and v376.Visible then
+			if u85[v376] then
+				u85[v376]:Disconnect();
+			end;
+			v376:Destroy();
+		end;
+	end;
+	for v377, v378 in pairs(game.Players:GetChildren()) do
+		local v379 = l__GiftTo__372.Players.Example:Clone();
+		v379.Name = v378.Name;
+		v379.Visible = true;
+		v379.PlrName.Text = v378.Name;
+		v379.Parent = l__GiftTo__372.Players;
+		local u86 = nil;
+		u85[v379] = v379.MouseButton1Click:connect(function()
+			u86 = v379.Name;
+			l__GiftTo__372.Visible = false;
+		end);
+	end;
+	l__GiftTo__372.Visible = true;
+	while true do
+		wait();
+		if l__GiftTo__372.Visible == false then
+			break;
+		end;	
+	end;
+	return nil;
+end;
+v7.ButtonEffects(l__CheckoutFrame__371.Checkout);
+v7.ButtonEffects(l__CheckoutFrame__371.Gift);
+if v13 then
+	l__CheckoutFrame__371.Checkout.Visible = false;
+	l__CheckoutFrame__371.Gift.Visible = false;
+end;
+local u87 = nil;
+local u88 = 0;
+l__CheckoutFrame__371.Checkout.MouseButton1Click:connect(function()
+	l__CheckoutFrame__371.Visible = false;
+	local v380 = nil;
+	if not u87 then
+		v380 = true;
+	end;
+	if v7.PromptPurchase("Are you sure you want to buy " .. u88 .. "x " .. u75.CaseName.Value .. "?", u84, v380) then
+		l__Events__11.BuyCrate:FireServer(u75, l__LocalPlayer__1.Name, u88);
+		u68.Visible = false;
+		l__Gui__6.Inventory.Inventory.Visible = false;
+		l__Gui__6.Inventory.HatsInventory.Visible = false;
+		l__Gui__6.Inventory.Crates.Visible = true;
+		l__Gui__6.Inventory.Visible = true;
+	end;
+end);
+l__CheckoutFrame__371.Gift.MouseButton1Click:connect(function()
+	l__CheckoutFrame__371.Visible = false;
+	local v381 = nil;
+	if not u87 then
+		v381 = true;
+	end;
+	local v382 = v7.ChoosePlayerToGift();
+	if v382 and v7.PromptPurchase("Are you sure you want to gift " .. u88 .. "x " .. u75.CaseName.Value .. " to " .. v382 .. "?", u84, v381) then
+		l__Events__11.BuyCrate:FireServer(u75, v382, u88);
+	end;
+end);
+local function u89(p44)
+	u88 = math.clamp(tonumber(l__CheckoutFrame__371.TextButton.Text) and 1, 1, 100);
+	l__CheckoutFrame__371.TextButton.Text = tostring(u88);
+	u75 = game.ReplicatedStorage.Crates:FindFirstChild(p44.Name);
+	if u75 then
+		u71 = p44;
+		l__CheckoutFrame__371.Title.Text = u75.CaseName.Value;
+		u87 = u75:FindFirstChild("CoinsCost");
+		if u87 then
+			local v383 = u87.Value;
+		else
+			v383 = u75.RubyCost.Value;
+		end;
+		l__CheckoutFrame__371.CratePic.Image = p44.ImageLabel.Image;
+		u84 = v383 * u88;
+		if u87 then
+			l__CheckoutFrame__371.CoinsAmount.Visible = true;
+			l__CheckoutFrame__371.RubyAmount.Visible = false;
+			l__CheckoutFrame__371.CoinsAmount.Text = v7.GiveCommas(u84);
+		else
+			l__CheckoutFrame__371.CoinsAmount.Visible = false;
+			l__CheckoutFrame__371.RubyAmount.Visible = true;
+			l__CheckoutFrame__371.RubyAmount.Text = v7.GiveCommas(u84);
+		end;
+		l__CheckoutFrame__371.P1.Text = math.floor(u75.PercentOdds["1"].Value * 10 + 0.5) / 10 .. "% Common";
+		l__CheckoutFrame__371.P2.Text = math.floor(u75.PercentOdds["2"].Value * 10 + 0.5) / 10 .. "% Rare";
+		l__CheckoutFrame__371.P3.Text = math.floor(u75.PercentOdds["3"].Value * 10 + 0.5) / 10 .. "% Epic";
+		l__CheckoutFrame__371.P4.Text = math.floor(u75.PercentOdds["4"].Value * 10 + 0.5) / 10 .. "% Legendary";
+		l__CheckoutFrame__371.P5.Text = math.floor(u75.PercentOdds["5"].Value * 10 + 0.5) / 10 .. "% Mythical";
+		l__CheckoutFrame__371.P6.Text = math.floor(u75.PercentOdds["6"].Value * 10 + 0.5) / 10 .. "% Sacred";
+		if u75.PercentOdds["7"].Value > 0 then
+			l__CheckoutFrame__371.P7.Visible = true;
+		else
+			l__CheckoutFrame__371.P7.Visible = false;
+		end;
+		l__CheckoutFrame__371.Visible = true;
+	end;
+end;
+l__CheckoutFrame__371.TextButton.FocusLost:connect(function()
+	if u71 then
+		u89(u71);
+	end;
+end);
+for v384, v385 in pairs(u68.SkinCratesFrame.Scroll:GetChildren()) do
+	v7.ButtonEffects(v385);
+	v385.MouseButton1Click:connect(function()
+		u89(v385);
+	end);
+end;
+for v386, v387 in pairs(u68.HatCratesFrame.Scroll:GetChildren()) do
+	v7.ButtonEffects(v387);
+	v387.MouseButton1Click:connect(function()
+		u89(v387);
+	end);
+end;
+local l__Inventory__388 = l__Gui__6.Inventory;
+local l__BuyCrates__389 = l__Inventory__388.Crates.BuyCrates;
+if v13 then
+	l__BuyCrates__389.Visible = false;
+end;
+v7.ButtonEffects(l__BuyCrates__389);
+l__BuyCrates__389.MouseButton1Click:connect(function()
+	l__Inventory__388.Visible = false;
+	l__Gui__6.Crates.Visible = true;
+end);
+local l__Buttons__390 = l__Inventory__388.Buttons;
+for v391, v392 in pairs(l__Buttons__390:GetChildren()) do
+	if v392:IsA("ImageButton") then
+		v7.ButtonEffects(v392);
+		v392.MouseButton1Click:connect(function()
+			for v393, v394 in pairs(l__Inventory__388:GetChildren()) do
+				if v394:IsA("ImageLabel") and l__Buttons__390:FindFirstChild(v394.Name) then
+					v394.Visible = false;
+					if v394.Name == v392.Name then
+						v394.Visible = true;
+					end;
+				end;
+			end;
+		end);
+	end;
+end;
+v7.ButtonEffects(l__Inventory__388.Close);
+v7.ButtonEffects(l__Inventory__388.Back);
+v7.ButtonEffects(l__Inventory__388.ClearSkins);
+v7.ButtonEffects(l__Inventory__388.ChooseEquip.Both);
+v7.ButtonEffects(l__Inventory__388.ChooseEquip.Backpack);
+v7.ButtonEffects(l__Inventory__388.ChooseEquip.Shovel);
+v7.ButtonEffects(l__Inventory__388.ChooseEquip.Close);
+v7.ButtonEffects(l__Inventory__388.ChooseEquipHat.Close);
+v7.ButtonEffects(l__Inventory__388.ChooseEquipHat.Equip);
+l__Inventory__388.Close.MouseButton1Click:connect(function()
+	l__Inventory__388.Visible = false;
+end);
+l__Inventory__388.Back.MouseButton1Click:connect(function()
+	l__Inventory__388.Visible = false;
+	l__Gui__6.Crates.Visible = true;
+end);
+l__Inventory__388.ClearSkins.MouseButton1Click:connect(function()
+	l__Events__11.UpdateSkins:FireServer(nil, "Both");
+end);
+l__Inventory__388.ChooseEquip.Both.MouseButton1Click:connect(function()
+	l__Inventory__388.ChooseEquip.Visible = false;
+	l__Events__11.UpdateSkins:FireServer(u57, "Both");
+end);
+l__Inventory__388.ChooseEquip.Backpack.MouseButton1Click:connect(function()
+	l__Inventory__388.ChooseEquip.Visible = false;
+	l__Events__11.UpdateSkins:FireServer(u57, "Backpack");
+end);
+l__Inventory__388.ChooseEquip.Shovel.MouseButton1Click:connect(function()
+	l__Inventory__388.ChooseEquip.Visible = false;
+	l__Events__11.UpdateSkins:FireServer(u57, "Shovel");
+end);
+l__Inventory__388.ChooseEquip.Close.MouseButton1Click:connect(function()
+	l__Inventory__388.ChooseEquip.Visible = false;
+end);
+l__Inventory__388.ChooseEquipHat.Equip.MouseButton1Click:connect(function()
+	l__Inventory__388.ChooseEquipHat.Visible = false;
+	l__Events__11.UpdateHats:FireServer(u58, "any");
+end);
+l__Inventory__388.ChooseEquipHat.Close.MouseButton1Click:connect(function()
+	l__Inventory__388.ChooseEquipHat.Visible = false;
+end);
+local l__Unequip__395 = l__Inventory__388.Inventory.Backpack.Unequip;
+local l__Unequip__396 = l__Inventory__388.Inventory.Tool.Unequip;
+v7.ButtonEffects(l__Unequip__395);
+v7.ButtonEffects(l__Unequip__396);
+l__Unequip__395.MouseButton1Click:connect(function()
+	l__Events__11.UpdateSkins:FireServer(nil, "Backpack");
+end);
+l__Unequip__396.MouseButton1Click:connect(function()
+	l__Events__11.UpdateSkins:FireServer(nil, "Shovel");
+end);
+local l__ToggleHats__397 = l__Inventory__388.HatsInventory.ToggleHats;
+v7.ButtonEffects(l__ToggleHats__397);
+if u47 == true then
+	l__ToggleHats__397.Amount.Text = "Hats: On";
+	l__ToggleHats__397.ImageColor3 = Color3.fromRGB(9, 229, 101);
+else
+	l__ToggleHats__397.Amount.Text = "Hats: Off";
+	l__ToggleHats__397.ImageColor3 = Color3.fromRGB(255, 87, 87);
+end;
+l__ToggleHats__397.MouseButton1Click:connect(function()
+	l__Events__11.ToggleHats:FireServer();
+	u47 = not u47;
+	if u47 == true then
+		l__ToggleHats__397.Amount.Text = "Hats: On";
+		l__ToggleHats__397.ImageColor3 = Color3.fromRGB(9, 229, 101);
+		return;
+	end;
+	l__ToggleHats__397.Amount.Text = "Hats: Off";
+	l__ToggleHats__397.ImageColor3 = Color3.fromRGB(255, 87, 87);
+end);
+local l__ToggleTrade__398 = l__Gui__6.Trade.ToggleTrade;
+v7.ButtonEffects(l__ToggleTrade__398);
+if u48 == true then
+	l__ToggleTrade__398.Amount.Text = "Enabled";
+	l__ToggleTrade__398.ImageColor3 = Color3.fromRGB(9, 229, 101);
+else
+	l__ToggleTrade__398.Amount.Text = "Disabled";
+	l__ToggleTrade__398.ImageColor3 = Color3.fromRGB(255, 87, 87);
+end;
+l__ToggleTrade__398.MouseButton1Click:connect(function()
+	l__Events__11.ToggleTrade:FireServer();
+	u48 = not u48;
+	if u48 == true then
+		l__ToggleTrade__398.Amount.Text = "Enabled";
+		l__ToggleTrade__398.ImageColor3 = Color3.fromRGB(9, 229, 101);
+		return;
+	end;
+	l__ToggleTrade__398.Amount.Text = "Disabled";
+	l__ToggleTrade__398.ImageColor3 = Color3.fromRGB(255, 87, 87);
+end);
+local l__Unequip__399 = l__Inventory__388.HatsInventory.Hat1.Unequip;
+local l__Unequip__400 = l__Inventory__388.HatsInventory.Hat2.Unequip;
+local l__Unequip__401 = l__Inventory__388.HatsInventory.Hat3.Unequip;
+v7.ButtonEffects(l__Unequip__399);
+v7.ButtonEffects(l__Unequip__400);
+v7.ButtonEffects(l__Unequip__401);
+l__Unequip__399.MouseButton1Click:connect(function()
+	l__Events__11.UpdateHats:FireServer(nil, "Hat1");
+end);
+l__Unequip__400.MouseButton1Click:connect(function()
+	l__Events__11.UpdateHats:FireServer(nil, "Hat2");
+end);
+l__Unequip__401.MouseButton1Click:connect(function()
+	l__Events__11.UpdateHats:FireServer(nil, "Hat3");
+end);
+local l__ChooseOpen__402 = l__Inventory__388.ChooseOpen;
+v7.ButtonEffects(l__ChooseOpen__402.Yes);
+local u90 = "";
+l__ChooseOpen__402.Yes.MouseButton1Click:connect(function()
+	l__ChooseOpen__402.Visible = false;
+	if u90 ~= "" then
+		local v403 = game.ReplicatedStorage.Crates:FindFirstChild(u90);
+		if v403 then
+			l__Events__11.SendOpenCrate:FireServer(v403);
+		end;
+	end;
+end);
+v7.ButtonEffects(l__ChooseOpen__402.Close);
+l__ChooseOpen__402.Close.MouseButton1Click:connect(function()
+	l__ChooseOpen__402.Visible = false;
+end);
+for v404, v405 in pairs(l__Inventory__388.Crates.Scroll.Frame:GetChildren()) do
+	if v405:IsA("ImageButton") then
+		v7.ButtonEffects(v405);
+		v405.MouseButton1Click:connect(function()
+			u90 = v405.Name;
+			l__ChooseOpen__402.Visible = true;
+		end);
+	end;
+end;
+v7.ButtonEffects(l__Gui__6.SelectUpgradeCategory.Backpack);
+v7.ButtonEffects(l__Gui__6.SelectUpgradeCategory.Shovel);
+v7.ButtonEffects(l__Gui__6.SelectUpgradeCategory.Pet);
+v7.ButtonEffects(l__Gui__6.SelectUpgradeCategory.Crates);
+v7.ButtonEffects(l__Gui__6.UpgradeShop.Backpacks);
+l__Gui__6.UpgradeShop.Backpacks.MouseButton1Click:connect(function()
+	u54 = "Backpack";
+	v7.UpdateToBackpacks(u55);
+end);
+v7.ButtonEffects(l__Gui__6.UpgradeShop.Pets);
+l__Gui__6.UpgradeShop.Pets.MouseButton1Click:connect(function()
+	u54 = "Pet";
+	v7.UpdateToPets(u55);
+end);
+v7.ButtonEffects(l__Gui__6.UpgradeShop.Shovels);
+l__Gui__6.UpgradeShop.Shovels.MouseButton1Click:connect(function()
+	u54 = "Shovel";
+	v7.UpdateToShovels(u55);
+end);
+v7.ButtonEffects(l__Gui__6.UpgradeShop.Crates);
+if v13 then
+	l__Gui__6.UpgradeShop.Crates.Visible = false;
+end;
+l__Gui__6.UpgradeShop.Crates.MouseButton1Click:connect(function()
+	u54 = "";
+	v7.NormalMode();
+	l__Gui__6.Crates.Visible = true;
+end);
+l__Gui__6.SelectUpgradeCategory.Backpack.MouseButton1Click:connect(function()
+	u54 = "Backpack";
+	l__Gui__6.SelectUpgradeCategory.Visible = false;
+end);
+l__Gui__6.SelectUpgradeCategory.Shovel.MouseButton1Click:connect(function()
+	u54 = "Shovel";
+	l__Gui__6.SelectUpgradeCategory.Visible = false;
+end);
+l__Gui__6.SelectUpgradeCategory.Pet.MouseButton1Click:connect(function()
+	u54 = "Pet";
+	l__Gui__6.SelectUpgradeCategory.Visible = false;
+end);
+if v13 then
+	l__Gui__6.SelectUpgradeCategory.Crates.Visible = false;
+end;
+l__Gui__6.SelectUpgradeCategory.Crates.MouseButton1Click:connect(function()
+	u54 = "";
+	l__Gui__6.SelectUpgradeCategory.Visible = false;
+	v7.NormalMode();
+	l__Gui__6.Crates.Visible = true;
+end);
+v7.ButtonEffects(l__Gui__6.UpgradeShop.Close);
+l__Gui__6.UpgradeShop.Close.MouseButton1Click:connect(function()
+	v7.NormalMode();
+end);
+v7.ButtonEffects(l__Gui__6.UpgradeShop.Close2);
+l__Gui__6.UpgradeShop.Close2.MouseButton1Click:connect(function()
+	v7.NormalMode(false);
+	v7.ResetUpgradeShop();
+end);
+v7.ButtonEffects(l__Gui__6.SelectUpgradeCategory.Close);
+l__Gui__6.SelectUpgradeCategory.Close.MouseButton1Click:connect(function()
+	u54 = "";
+	l__Gui__6.SelectUpgradeCategory.Visible = false;
+	v7.NormalMode();
+end);
+local function u91(p45, p46)
+	if p45:FindFirstChild("DigPowerBoost") then
+		if p45.DigPowerBoost.Value < p46.DigPowerBoost.Value then
+			return true;
+		else
+			return false;
+		end;
+	end;
+	if p45:FindFirstChild("Storage") then
+		if p45.Name == "Infinite" then
+			return false;
+		elseif p45.Storage.Value < p46.Storage.Value then
+			return true;
+		else
+			return false;
+		end;
+	end;
+	if not p45:FindFirstChildOfClass("Tool") then
+		return;
+	end;
+	local v406 = p45:FindFirstChildOfClass("Tool");
+	local v407 = p46:FindFirstChildOfClass("Tool");
+	if v406.Configurations.BlockDamage.Value / v406.Configurations.AttackLength.Value < v407.Configurations.BlockDamage.Value / v407.Configurations.AttackLength.Value then
+		return true;
+	end;
+	return false;
+end;
+function v7.ResetUpgradeShop()
+	u55 = 1;
+	v7.UpgradeMode();
+	if u54 == "Shovel" then
+		local v408 = 1;
+		local v409 = game.ReplicatedStorage.Shovels:GetChildren();
+		table.sort(v409, u91);
+		for v410 = 1, #v409 do
+			if v409[v410].Name == u20 then
+				v408 = v410;
+			end;
+		end;
+		u55 = v408;
+		v7.UpdateToShovels(u55);
+		return;
+	end;
+	if u54 == "Backpack" then
+		local v411 = 1;
+		local v412 = game.ReplicatedStorage.Backpacks:GetChildren();
+		table.sort(v412, u91);
+		for v413 = 1, #v412 do
+			if v412[v413].Name == u19 then
+				v411 = v413;
+			end;
+		end;
+		u55 = v411;
+		v7.UpdateToBackpacks(u55);
+		return;
+	end;
+	if u54 == "Pet" then
+		local v414 = 1;
+		local v415 = game.ReplicatedStorage.Pets:GetChildren();
+		table.sort(v415, u91);
+		for v416 = 1, #v415 do
+			if v415[v416].Name == u21 then
+				v414 = v416;
+			end;
+		end;
+		u55 = v414;
+		v7.UpdateToPets(u55);
+	end;
+end;
+local u92 = false;
+local u93 = nil;
+local u94 = false;
+local u95 = false;
+function v7.UpdateToShovels(p47)
+	local v417 = nil;
+	local v418 = 9999999;
+	for v419, v420 in pairs(game.ReplicatedStorage.Islands:GetChildren()) do
+		if v420:FindFirstChild("UpgradeCF") then
+			local l__magnitude__421 = (l__LocalPlayer__1.Character.HumanoidRootPart.Position - v420.UpgradeCF.Value.p).magnitude;
+			if l__magnitude__421 < v418 then
+				v418 = l__magnitude__421;
+				v417 = v420;
+			end;
+		end;
+	end;
+	u92 = true;
+	local l__UpgradeShop__422 = l__Gui__6.UpgradeShop;
+	u55 = p47;
+	local v423 = game.ReplicatedStorage.Shovels:GetChildren();
+	table.sort(v423, u91);
+	if #v423 < u55 then
+		u55 = 1;
+	elseif u55 < 1 then
+		u55 = #v423;
+	end;
+	u93 = v423[u55];
+	local v424 = workspace.ShovelShopModels:FindFirstChild(u93.Name .. "Camera");
+	if v424 then
+		v7.TweenCamera(v424.CFrame, v424.CFrame * CFrame.new(0, 0, -6));
+	end;
+	l__UpgradeShop__422.Category.Text = "Tools";
+	l__UpgradeShop__422.ItemName.Text = u93.Name;
+	local v425 = u93:FindFirstChildOfClass("Tool");
+	if v425 then
+		l__UpgradeShop__422.Buy.Stats.Visible = true;
+		l__UpgradeShop__422.Buy.PetStats.Visible = false;
+		l__UpgradeShop__422.Buy.BackpackStats.Visible = false;
+		l__UpgradeShop__422.Buy.Stats.Damage.TextLabel.Text = "+ " .. v7.GiveCommas(v425.Configurations.BlockDamage.Value) .. " Strength";
+		l__UpgradeShop__422.Buy.Stats.Timer.TextLabel.Text = v425.Configurations.AttackLength.Value .. "s";
+	end;
+	local l__Island__426 = u93:FindFirstChild("Island");
+	if u93.Name == "Infinite" then
+		local v427 = false;
+		for v428, v429 in pairs(u5) do
+			if v429 == "Infinite Inventory" then
+				v427 = true;
+			end;
+		end;
+		if v427 == true then
+			u94 = true;
+			u95 = u20 == u93.Name;
+		else
+			u95 = false;
+			u94 = false;
+		end;
+	elseif u93.Name == "Black Hole" or u93.Name == "Dark Pegasus" then
+		local v430 = false;
+		for v431, v432 in pairs(u5) do
+			if v432 == "Elite" then
+				v430 = true;
+			end;
+		end;
+		if v430 == true then
+			u94 = true;
+			u95 = u20 == u93.Name;
+		else
+			u95 = false;
+			u94 = false;
+		end;
+	elseif u93.Name == "Scythe" then
+		local v433 = false;
+		for v434, v435 in pairs(u5) do
+			if v435 == "Scythe" then
+				v433 = true;
+			end;
+		end;
+		if v433 == true then
+			u94 = true;
+			if u20 == u93.Name then
+				u95 = true;
+			else
+				u95 = false;
+			end;
+		else
+			u95 = false;
+			u94 = false;
+		end;
+	elseif u93.Name == "Lightning Bolt" then
+		local v436 = false;
+		for v437, v438 in pairs(u5) do
+			if v438 == "Lightning" then
+				v436 = true;
+			end;
+		end;
+		if v436 == true then
+			u94 = true;
+			if u20 == u93.Name then
+				u95 = true;
+			else
+				u95 = false;
+			end;
+		else
+			u95 = false;
+			u94 = false;
+		end;
+	elseif u93.Name == "Teleporter" then
+		local v439 = false;
+		for v440, v441 in pairs(u5) do
+			if v441 == "Teleporter" then
+				v439 = true;
+			end;
+		end;
+		if v439 == true then
+			u94 = true;
+			u95 = true;
+		else
+			u95 = false;
+			u94 = false;
+		end;
+	else
+		if l__Island__426 and l__Island__426.Value ~= nil then
+			if l__Island__426.Value == v417 then
+				u92 = true;
+			else
+				u92 = false;
+			end;
+		else
+			u92 = true;
+		end;
+		if l__Events__11.CheckIfOwned:InvokeServer(u93.Name) == true then
+			u94 = true;
+			if u20 == u93.Name then
+				u95 = true;
+			else
+				u95 = false;
+			end;
+		else
+			u95 = false;
+			u94 = false;
+		end;
+	end;
+	if u92 ~= true then
+		l__UpgradeShop__422.Buy.ImageColor3 = Color3.fromRGB(160, 160, 160);
+		l__UpgradeShop__422.Buy.Coins.Visible = false;
+		if l__Island__426 and l__Island__426.Value then
+			local l__Name__442 = l__Island__426.Value.Name;
+			if v13 and l__Name__442 == "Pirate" then
+				l__UpgradeShop__422.Buy.Amount.Text = "Only Available at Hideout Area";
+				return;
+			else
+				l__UpgradeShop__422.Buy.Amount.Text = "Only Available at " .. l__Name__442 .. " Area";
+				return;
+			end;
+		else
+			l__UpgradeShop__422.Buy.Amount.Text = "You're in the wrong Area!";
+			return;
+		end;
+	end;
+	if u94 then
+		if u95 then
+			l__UpgradeShop__422.Buy.Amount.Text = "Equipped";
+			l__UpgradeShop__422.Buy.ImageColor3 = Color3.fromRGB(255, 87, 87);
+		else
+			l__UpgradeShop__422.Buy.Amount.Text = "Equip";
+			l__UpgradeShop__422.Buy.ImageColor3 = Color3.fromRGB(55, 202, 255);
+		end;
+		l__UpgradeShop__422.Buy.Coins.Visible = false;
+		return;
+	end;
+	l__UpgradeShop__422.Buy.Coins.Visible = false;
+	l__UpgradeShop__422.Buy.ImageColor3 = Color3.fromRGB(9, 229, 101);
+	if u93.Name == "Infinite" then
+		l__UpgradeShop__422.Buy.Amount.Text = "Buy Gamepass - R$" .. v7.GiveCommas(game.ReplicatedStorage.Gamepasses["Infinite Inventory"].Price.Value);
+		return;
+	end;
+	if u93.Name == "Black Hole" or u93.Name == "Dark Pegasus" then
+		l__UpgradeShop__422.Buy.Amount.Text = "Buy Gamepass - R$" .. v7.GiveCommas(game.ReplicatedStorage.Gamepasses.Elite.Price.Value);
+		return;
+	end;
+	if u93.Name == "Scythe" then
+		l__UpgradeShop__422.Buy.Amount.Text = "Buy Gamepass - R$" .. v7.GiveCommas(game.ReplicatedStorage.Gamepasses.Scythe.Price.Value);
+		return;
+	end;
+	if u93.Name == "Lightning Bolt" then
+		l__UpgradeShop__422.Buy.Amount.Text = "Buy Gamepass - R$" .. v7.GiveCommas(game.ReplicatedStorage.Gamepasses.Lightning.Price.Value);
+		return;
+	end;
+	if u93.Name == "Teleporter" then
+		l__UpgradeShop__422.Buy.Amount.Text = "Buy Gamepass - R$" .. v7.GiveCommas(game.ReplicatedStorage.Gamepasses.Teleporter.Price.Value);
+		return;
+	end;
+	l__UpgradeShop__422.Buy.Amount.Text = "";
+	l__UpgradeShop__422.Buy.Coins.Visible = true;
+	l__UpgradeShop__422.Buy.Coins.Amount.Text = v7.GiveCommas(u93.Price.Value);
+end;
+function v7.UpdateToBackpacks(p48)
+	local v443 = nil;
+	local v444 = 9999999;
+	for v445, v446 in pairs(game.ReplicatedStorage.Islands:GetChildren()) do
+		if v446:FindFirstChild("UpgradeCF") then
+			local l__magnitude__447 = (l__LocalPlayer__1.Character.HumanoidRootPart.Position - v446.UpgradeCF.Value.p).magnitude;
+			if l__magnitude__447 < v444 then
+				v444 = l__magnitude__447;
+				v443 = v446;
+			end;
+		end;
+	end;
+	u92 = true;
+	local l__UpgradeShop__448 = l__Gui__6.UpgradeShop;
+	u55 = p48;
+	local v449 = game.ReplicatedStorage.Backpacks:GetChildren();
+	table.sort(v449, u91);
+	if #v449 < u55 then
+		u55 = 1;
+	elseif u55 < 1 then
+		u55 = #v449;
+	end;
+	u93 = v449[u55];
+	local v450 = workspace.BackpackShopModels:FindFirstChild(u93.Name .. "Camera");
+	if v450 then
+		v7.TweenCamera(v450.CFrame, v450.CFrame * CFrame.new(0, 0, -6));
+	end;
+	l__UpgradeShop__448.Category.Text = "Backpacks";
+	l__UpgradeShop__448.ItemName.Text = u93.Name;
+	l__UpgradeShop__448.Buy.Stats.Visible = false;
+	l__UpgradeShop__448.Buy.PetStats.Visible = false;
+	l__UpgradeShop__448.Buy.BackpackStats.Visible = true;
+	if u93.Name ~= "Infinite" then
+		l__UpgradeShop__448.Buy.BackpackStats.Damage.TextLabel.Text = v7.GiveCommas(u93.Storage.Value) .. " Storage";
+	else
+		l__UpgradeShop__448.Buy.BackpackStats.Damage.TextLabel.Text = "\226\136\158 Storage";
+	end;
+	local l__Island__451 = u93:FindFirstChild("Island");
+	if u93.Name == "Infinite" then
+		local v452 = false;
+		for v453, v454 in pairs(u5) do
+			if v454 == "Infinite Inventory" then
+				v452 = true;
+			end;
+		end;
+		if v452 == true then
+			u94 = true;
+			u95 = u20 == u93.Name;
+		else
+			u95 = false;
+			u94 = false;
+		end;
+	elseif u93.Name == "Black Hole" or u93.Name == "Dark Pegasus" then
+		local v455 = false;
+		for v456, v457 in pairs(u5) do
+			if v457 == "Elite" then
+				v455 = true;
+			end;
+		end;
+		if v455 == true then
+			u94 = true;
+			u95 = u20 == u93.Name;
+		else
+			u95 = false;
+			u94 = false;
+		end;
+	elseif u93.Name == "Scythe" then
+		local v458 = false;
+		for v459, v460 in pairs(u5) do
+			if v460 == "Scythe" then
+				v458 = true;
+			end;
+		end;
+		if v458 == true then
+			u94 = true;
+			if u20 == u93.Name then
+				u95 = true;
+			else
+				u95 = false;
+			end;
+		else
+			u95 = false;
+			u94 = false;
+		end;
+	elseif u93.Name == "Lightning Bolt" then
+		local v461 = false;
+		for v462, v463 in pairs(u5) do
+			if v463 == "Lightning" then
+				v461 = true;
+			end;
+		end;
+		if v461 == true then
+			u94 = true;
+			if u20 == u93.Name then
+				u95 = true;
+			else
+				u95 = false;
+			end;
+		else
+			u95 = false;
+			u94 = false;
+		end;
+	elseif u93.Name == "Teleporter" then
+		local v464 = false;
+		for v465, v466 in pairs(u5) do
+			if v466 == "Teleporter" then
+				v464 = true;
+			end;
+		end;
+		if v464 == true then
+			u94 = true;
+			u95 = true;
+		else
+			u95 = false;
+			u94 = false;
+		end;
+	else
+		if l__Island__451 and l__Island__451.Value ~= nil then
+			if l__Island__451.Value == v443 then
+				u92 = true;
+			else
+				u92 = false;
+			end;
+		else
+			u92 = true;
+		end;
+		if l__Events__11.CheckIfOwned:InvokeServer(u93.Name) == true then
+			u94 = true;
+			if u19 == u93.Name then
+				u95 = true;
+			else
+				u95 = false;
+			end;
+		else
+			u95 = false;
+			u94 = false;
+		end;
+	end;
+	if u92 ~= true then
+		l__UpgradeShop__448.Buy.ImageColor3 = Color3.fromRGB(160, 160, 160);
+		l__UpgradeShop__448.Buy.Coins.Visible = false;
+		if l__Island__451 and l__Island__451.Value then
+			local l__Name__467 = l__Island__451.Value.Name;
+			if v13 and l__Name__467 == "Pirate" then
+				l__UpgradeShop__448.Buy.Amount.Text = "Only Available at Hideout Area";
+				return;
+			else
+				l__UpgradeShop__448.Buy.Amount.Text = "Only Available at " .. l__Name__467 .. " Area";
+				return;
+			end;
+		else
+			l__UpgradeShop__448.Buy.Amount.Text = "You're on the wrong Area!";
+			return;
+		end;
+	end;
+	if u94 then
+		if u95 then
+			l__UpgradeShop__448.Buy.Amount.Text = "Equipped";
+			l__UpgradeShop__448.Buy.ImageColor3 = Color3.fromRGB(255, 87, 87);
+		else
+			l__UpgradeShop__448.Buy.Amount.Text = "Equip";
+			l__UpgradeShop__448.Buy.ImageColor3 = Color3.fromRGB(55, 202, 255);
+		end;
+		l__UpgradeShop__448.Buy.Coins.Visible = false;
+		return;
+	end;
+	l__UpgradeShop__448.Buy.Coins.Visible = false;
+	l__UpgradeShop__448.Buy.ImageColor3 = Color3.fromRGB(9, 229, 101);
+	if u93.Name == "Infinite" then
+		l__UpgradeShop__448.Buy.Amount.Text = "Buy Gamepass - R$" .. v7.GiveCommas(game.ReplicatedStorage.Gamepasses["Infinite Inventory"].Price.Value);
+		return;
+	end;
+	if u93.Name == "Black Hole" or u93.Name == "Dark Pegasus" then
+		l__UpgradeShop__448.Buy.Amount.Text = "Buy Gamepass - R$" .. v7.GiveCommas(game.ReplicatedStorage.Gamepasses.Elite.Price.Value);
+		return;
+	end;
+	if u93.Name == "Scythe" then
+		l__UpgradeShop__448.Buy.Amount.Text = "Buy Gamepass - R$" .. v7.GiveCommas(game.ReplicatedStorage.Gamepasses.Scythe.Price.Value);
+		return;
+	end;
+	if u93.Name == "Lightning Bolt" then
+		l__UpgradeShop__448.Buy.Amount.Text = "Buy Gamepass - R$" .. v7.GiveCommas(game.ReplicatedStorage.Gamepasses.Lightning.Price.Value);
+		return;
+	end;
+	if u93.Name == "Teleporter" then
+		l__UpgradeShop__448.Buy.Amount.Text = "Buy Gamepass - R$" .. v7.GiveCommas(game.ReplicatedStorage.Gamepasses.Teleporter.Price.Value);
+		return;
+	end;
+	l__UpgradeShop__448.Buy.Amount.Text = "";
+	l__UpgradeShop__448.Buy.Coins.Visible = true;
+	l__UpgradeShop__448.Buy.Coins.Amount.Text = v7.GiveCommas(u93.Price.Value);
+end;
+function v7.UpdateToPets(p49)
+	local v468 = nil;
+	local v469 = 9999999;
+	for v470, v471 in pairs(game.ReplicatedStorage.Islands:GetChildren()) do
+		if v471:FindFirstChild("UpgradeCF") then
+			local l__magnitude__472 = (l__LocalPlayer__1.Character.HumanoidRootPart.Position - v471.UpgradeCF.Value.p).magnitude;
+			if l__magnitude__472 < v469 then
+				v469 = l__magnitude__472;
+				v468 = v471;
+			end;
+		end;
+	end;
+	u92 = true;
+	local l__UpgradeShop__473 = l__Gui__6.UpgradeShop;
+	u55 = p49;
+	local v474 = game.ReplicatedStorage.Pets:GetChildren();
+	table.sort(v474, u91);
+	if #v474 < u55 then
+		u55 = 1;
+	elseif u55 < 1 then
+		u55 = #v474;
+	end;
+	u93 = v474[u55];
+	local v475 = workspace.PetShopModels:FindFirstChild(u93.Name .. "Camera");
+	if v475 then
+		v7.TweenCamera(v475.CFrame, v475.CFrame * CFrame.new(0, 0, -6));
+	end;
+	l__UpgradeShop__473.Category.Text = "Pets";
+	l__UpgradeShop__473.ItemName.Text = u93.Name;
+	l__UpgradeShop__473.Buy.Stats.Visible = false;
+	l__UpgradeShop__473.Buy.PetStats.Visible = true;
+	l__UpgradeShop__473.Buy.BackpackStats.Visible = false;
+	l__UpgradeShop__473.Buy.PetStats.Damage.TextLabel.Text = "+ " .. v7.GiveCommas(u93.DigPowerBoost.Value) .. " Tool Strength";
+	local l__Island__476 = u93:FindFirstChild("Island");
+	if u93.Name == "Infinite" then
+		local v477 = false;
+		for v478, v479 in pairs(u5) do
+			if v479 == "Infinite Inventory" then
+				v477 = true;
+			end;
+		end;
+		if v477 == true then
+			u94 = true;
+			u95 = u20 == u93.Name;
+		else
+			u95 = false;
+			u94 = false;
+		end;
+	elseif u93.Name == "Black Hole" or u93.Name == "Dark Pegasus" then
+		local v480 = false;
+		for v481, v482 in pairs(u5) do
+			if v482 == "Elite" then
+				v480 = true;
+			end;
+		end;
+		if v480 == true then
+			u94 = true;
+			u95 = u20 == u93.Name;
+		else
+			u95 = false;
+			u94 = false;
+		end;
+	elseif u93.Name == "Scythe" then
+		local v483 = false;
+		for v484, v485 in pairs(u5) do
+			if v485 == "Scythe" then
+				v483 = true;
+			end;
+		end;
+		if v483 == true then
+			u94 = true;
+			if u20 == u93.Name then
+				u95 = true;
+			else
+				u95 = false;
+			end;
+		else
+			u95 = false;
+			u94 = false;
+		end;
+	elseif u93.Name == "Lightning Bolt" then
+		local v486 = false;
+		for v487, v488 in pairs(u5) do
+			if v488 == "Lightning" then
+				v486 = true;
+			end;
+		end;
+		if v486 == true then
+			u94 = true;
+			if u20 == u93.Name then
+				u95 = true;
+			else
+				u95 = false;
+			end;
+		else
+			u95 = false;
+			u94 = false;
+		end;
+	elseif u93.Name == "Teleporter" then
+		local v489 = false;
+		for v490, v491 in pairs(u5) do
+			if v491 == "Teleporter" then
+				v489 = true;
+			end;
+		end;
+		if v489 == true then
+			u94 = true;
+			u95 = true;
+		else
+			u95 = false;
+			u94 = false;
+		end;
+	else
+		if l__Island__476 and l__Island__476.Value ~= nil then
+			if l__Island__476.Value == v468 then
+				u92 = true;
+			else
+				u92 = false;
+			end;
+		else
+			u92 = true;
+		end;
+		if l__Events__11.CheckIfOwned:InvokeServer(u93.Name) == true then
+			u94 = true;
+			if u21 == u93.Name then
+				u95 = true;
+			else
+				u95 = false;
+			end;
+		else
+			u95 = false;
+			u94 = false;
+		end;
+	end;
+	if u92 ~= true then
+		l__UpgradeShop__473.Buy.ImageColor3 = Color3.fromRGB(160, 160, 160);
+		l__UpgradeShop__473.Buy.Coins.Visible = false;
+		if l__Island__476 and l__Island__476.Value then
+			local l__Name__492 = l__Island__476.Value.Name;
+			if v13 and l__Name__492 == "Pirate" then
+				l__UpgradeShop__473.Buy.Amount.Text = "Only Available at Hideout Area";
+				return;
+			else
+				l__UpgradeShop__473.Buy.Amount.Text = "Only Available at " .. l__Name__492 .. " Area";
+				return;
+			end;
+		else
+			l__UpgradeShop__473.Buy.Amount.Text = "You're on the wrong Area!";
+			return;
+		end;
+	end;
+	if u94 then
+		if u95 then
+			l__UpgradeShop__473.Buy.Amount.Text = "Equipped";
+			l__UpgradeShop__473.Buy.ImageColor3 = Color3.fromRGB(255, 87, 87);
+		else
+			l__UpgradeShop__473.Buy.Amount.Text = "Equip";
+			l__UpgradeShop__473.Buy.ImageColor3 = Color3.fromRGB(55, 202, 255);
+		end;
+		l__UpgradeShop__473.Buy.Coins.Visible = false;
+		return;
+	end;
+	l__UpgradeShop__473.Buy.Coins.Visible = false;
+	l__UpgradeShop__473.Buy.ImageColor3 = Color3.fromRGB(9, 229, 101);
+	if u93.Name == "Infinite" then
+		l__UpgradeShop__473.Buy.Amount.Text = "Buy Gamepass - R$" .. v7.GiveCommas(game.ReplicatedStorage.Gamepasses["Infinite Inventory"].Price.Value);
+		return;
+	end;
+	if u93.Name == "Black Hole" or u93.Name == "Dark Pegasus" then
+		l__UpgradeShop__473.Buy.Amount.Text = "Buy Gamepass - R$" .. v7.GiveCommas(game.ReplicatedStorage.Gamepasses.Elite.Price.Value);
+		return;
+	end;
+	if u93.Name == "Scythe" then
+		l__UpgradeShop__473.Buy.Amount.Text = "Buy Gamepass - R$" .. v7.GiveCommas(game.ReplicatedStorage.Gamepasses.Scythe.Price.Value);
+		return;
+	end;
+	if u93.Name == "Lightning Bolt" then
+		l__UpgradeShop__473.Buy.Amount.Text = "Buy Gamepass - R$" .. v7.GiveCommas(game.ReplicatedStorage.Gamepasses.Lightning.Price.Value);
+		return;
+	end;
+	if u93.Name == "Teleporter" then
+		l__UpgradeShop__473.Buy.Amount.Text = "Buy Gamepass - R$" .. v7.GiveCommas(game.ReplicatedStorage.Gamepasses.Teleporter.Price.Value);
+		return;
+	end;
+	l__UpgradeShop__473.Buy.Amount.Text = "";
+	l__UpgradeShop__473.Buy.Coins.Visible = true;
+	l__UpgradeShop__473.Buy.Coins.Amount.Text = v7.GiveCommas(u93.Price.Value);
+end;
+v7.ButtonEffects(l__Gui__6.UpgradeShop.Left);
+v7.ButtonEffects(l__Gui__6.UpgradeShop.Right);
+l__Gui__6.UpgradeShop.Left.MouseButton1Click:connect(function()
+	u55 = u55 - 1;
+	if u54 == "Shovel" then
+		v7.UpdateToShovels(u55);
+		return;
+	end;
+	if u54 == "Backpack" then
+		v7.UpdateToBackpacks(u55);
+		return;
+	end;
+	if u54 == "Pet" then
+		v7.UpdateToPets(u55);
+	end;
+end);
+l__Gui__6.UpgradeShop.Right.MouseButton1Click:connect(function()
+	u55 = u55 + 1;
+	if u54 == "Shovel" then
+		v7.UpdateToShovels(u55);
+		return;
+	end;
+	if u54 == "Backpack" then
+		v7.UpdateToBackpacks(u55);
+		return;
+	end;
+	if u54 == "Pet" then
+		v7.UpdateToPets(u55);
+	end;
+end);
+v7.ButtonEffects(l__Gui__6.UpgradeShop.Buy);
+l__Gui__6.UpgradeShop.Buy.MouseButton1Click:connect(function()
+	if u92 == true then
+		if u94 == true then
+			if not u95 then
+				if u54 == "Backpack" then
+					l__Events__11.EquipBackpack:FireServer(u93.Name);
+					return;
+				end;
+				if u54 == "Pet" then
+					l__Events__11.EquipPet:FireServer(u93.Name);
+					return;
+				end;
+				if u54 == "Shovel" then
+					if l__LocalPlayer__1.Character and l__LocalPlayer__1.Character:FindFirstChild("Humanoid") then
+						for v493, v494 in pairs((l__LocalPlayer__1.Character.Humanoid:GetPlayingAnimationTracks())) do
+							v494:Stop();
+						end;
+					end;
+					l__Events__11.EquipShovel:FireServer(u93.Name);
+					return;
+				end;
+			end;
+		else
+			if u93.Name == "Infinite" then
+				l__MarketplaceService__8:PromptGamePassPurchase(l__LocalPlayer__1, game.ReplicatedStorage.Gamepasses["Infinite Inventory"].ID.Value);
+				return;
+			end;
+			if u93.Name == "Black Hole" or u93.Name == "Dark Pegasus" then
+				l__MarketplaceService__8:PromptGamePassPurchase(l__LocalPlayer__1, game.ReplicatedStorage.Gamepasses.Elite.ID.Value);
+				return;
+			end;
+			if u93.Name == "Scythe" then
+				l__MarketplaceService__8:PromptGamePassPurchase(l__LocalPlayer__1, game.ReplicatedStorage.Gamepasses.Scythe.ID.Value);
+				return;
+			end;
+			if u93.Name == "Lightning Bolt" then
+				l__MarketplaceService__8:PromptGamePassPurchase(l__LocalPlayer__1, game.ReplicatedStorage.Gamepasses.Lightning.ID.Value);
+				return;
+			end;
+			if u93.Name == "Teleporter" then
+				l__MarketplaceService__8:PromptGamePassPurchase(l__LocalPlayer__1, game.ReplicatedStorage.Gamepasses.Teleporter.ID.Value);
+				return;
+			end;
+			if v7.PromptPurchase("Are you sure you want to buy " .. u93.Name .. "?", u93.Price.Value) then
+				l__Events__11.Checkout:FireServer(u93.Name);
+			end;
+		end;
+	end;
+end);
+local l__Trade__495 = l__Gui__6.Buttons.Trade;
+v7.ButtonEffects(l__Trade__495);
+local u96 = l__Gui__6.Trade;
+l__Trade__495.MouseButton1Click:connect(function()
+	u96.ChoosePlayer.Visible = true;
+	u96.Trading.Visible = false;
+	u96.Visible = true;
+end);
+local l__Close__496 = u96.ChoosePlayer.Close;
+v7.ButtonEffects(l__Close__496);
+l__Close__496.MouseButton1Click:connect(function()
+	u96.Visible = false;
+end);
+local l__MyInventory__497 = u96.Trading.MyInventory;
+for v498, v499 in pairs(l__MyInventory__497:GetChildren()) do
+	if v499:IsA("ImageButton") then
+		v7.ButtonEffects(v499);
+		v499.MouseButton1Click:connect(function()
+			for v500, v501 in pairs(l__MyInventory__497:GetChildren()) do
+				if v501:IsA("ImageLabel") then
+					if v501.Name == "Offer" or v501.Name == v499.Name then
+						v501.Visible = true;
+					else
+						v501.Visible = false;
+					end;
+				end;
+			end;
+		end);
+	end;
+end;
+local l__OtherInventory__502 = u96.Trading.OtherInventory;
+for v503, v504 in pairs(l__OtherInventory__502:GetChildren()) do
+	if v504:IsA("ImageButton") then
+		v7.ButtonEffects(v504);
+		v504.MouseButton1Click:connect(function()
+			for v505, v506 in pairs(l__OtherInventory__502:GetChildren()) do
+				if v506:IsA("ImageLabel") then
+					if v506.Name == "Offer" or v506.Name == v504.Name then
+						v506.Visible = true;
+					else
+						v506.Visible = false;
+					end;
+				end;
+			end;
+		end);
+	end;
+end;
+local l__Accept__507 = u96.Trading.Accept;
+local l__Decline__508 = u96.Trading.Decline;
+v7.ButtonEffects(l__Accept__507);
+v7.ButtonEffects(l__Decline__508);
+l__Accept__507.MouseButton1Click:connect(function()
+	l__Events__11.FinalTradeChoice:FireServer(true);
+end);
+l__Decline__508.MouseButton1Click:connect(function()
+	l__Events__11.FinalTradeChoice:FireServer(false);
+end);
+l__Events__11.TradeMessage.OnClientEvent:connect(function(p50)
+	if l__Gui__6.Trade.Visible == true then
+		local l__TradeResult__509 = l__Gui__6.Popups.TradeResult;
+		l__Gui__6.Trade.Visible = false;
+		if p50 == "Complete" then
+			l__TradeResult__509.Accepted.Visible = true;
+			l__TradeResult__509.Declined.Visible = false;
+		elseif p50 == "Decline" then
+			l__TradeResult__509.Accepted.Visible = false;
+			l__TradeResult__509.Declined.Visible = true;
+		end;
+		l__TradeResult__509.Visible = true;
+		wait(3);
+		l__TradeResult__509.Visible = false;
+	end;
+end);
+local l__TradeOffer__510 = l__Gui__6.Popups.TradeOffer;
+v7.ButtonEffects(l__TradeOffer__510.Yes);
+v7.ButtonEffects(l__TradeOffer__510.No);
+local u97 = l__TradeOffer__510;
+l__TradeOffer__510.Yes.MouseButton1Click:connect(function()
+	local v511 = game.Players:FindFirstChild(u97.Info.Text);
+	if v511 then
+		l__Events__11.TradeChoice:FireServer(v511, true);
+		l__Gui__6.Trade.Visible = true;
+	end;
+end);
+u97.No.MouseButton1Click:connect(function()
+	local v512 = game.Players:FindFirstChild(u97.Info.Text);
+	if v512 then
+		l__Events__11.TradeChoice:FireServer(v512, false);
+	end;
+end);
+u96 = l__Gui__6.Radio.TypeID.TextBox.FocusLost;
+u96 = u96.connect;
+u96(u96, function()
+	if tonumber(l__Gui__6.Radio.TypeID.TextBox.Text) ~= tonumber(u12) then
+		l__Gui__6.Radio.TypeID.Play.TextLabel.Text = "Play";
+	end;
+end);
+u96 = l__Gui__6.Buttons.Radio;
+v7.ButtonEffects(u96);
+local u98 = false;
+u96.MouseButton1Click:connect(function()
+	if u98 == false then
+		pcall(function()
+			if l__MarketplaceService__8:UserOwnsGamePassAsync(l__LocalPlayer__1.UserId, game.ReplicatedStorage.Gamepasses.Radio.ID.Value) then
+				u98 = true;
+			end;
+		end);
+	end;
+	if u98 then
+		l__Gui__6.Radio.Visible = not l__Gui__6.Radio.Visible;
+		return;
+	end;
+	l__MarketplaceService__8:PromptGamePassPurchase(l__LocalPlayer__1, game.ReplicatedStorage.Gamepasses.Radio.ID.Value);
+end);
+local l__Radio__513 = l__Gui__6.Radio;
+v7.ButtonEffects(l__Radio__513.Close);
+u97 = function()
+	l__Radio__513.Visible = false;
+end;
+l__Radio__513.Close.MouseButton1Click:connect(u97);
+v7.ButtonEffects(l__Radio__513.Type);
+u97 = function()
+	l__Radio__513.FavoritesFrame.Visible = false;
+	l__Radio__513.TypeID.Visible = true;
+end;
+l__Radio__513.Type.MouseButton1Click:connect(u97);
+v7.ButtonEffects(l__Radio__513.Favorites);
+u97 = function()
+	l__Radio__513.FavoritesFrame.Visible = true;
+	l__Radio__513.TypeID.Visible = false;
+end;
+l__Radio__513.Favorites.MouseButton1Click:connect(u97);
+u97 = l__Radio__513.TypeID;
+v7.ButtonEffects(u97.Play);
+u97 = l__Radio__513.TypeID;
+u97 = function()
+	if u12 ~= nil and u12 ~= 0 and tonumber(l__Gui__6.Radio.TypeID.TextBox.Text) == tonumber(u12) then
+		u12 = nil;
+		v7.PlaySong(0);
+		l__Radio__513.TypeID.Play.TextLabel.Text = "Play";
+		return;
+	end;
+	if tonumber(l__Radio__513.TypeID.TextBox.Text) ~= nil and tonumber(l__Radio__513.TypeID.TextBox.Text) ~= 0 then
+		u12 = tonumber(l__Radio__513.TypeID.TextBox.Text);
+		if l__MarketplaceService__8:GetProductInfo(tonumber(u12)).AssetTypeId == 3 then
+			v7.PlaySong(u12);
+		end;
+		l__Radio__513.TypeID.Play.TextLabel.Text = "Pause";
+	end;
+end;
+u97.Play.MouseButton1Click:connect(u97);
+u97 = l__Radio__513.TypeID.Example;
+u97 = function()
+	l__Events__11.FavoriteThisSong:FireServer(tonumber(u12));
+	if l__Radio__513.TypeID.Example.FavButton.Favorited.Visible == false then
+		l__Radio__513.TypeID.Example.FavButton.Favorited.Visible = true;
+		l__Radio__513.TypeID.Example.FavButton.NotFavorited.Visible = false;
+		return;
+	end;
+	l__Radio__513.TypeID.Example.FavButton.Favorited.Visible = false;
+	l__Radio__513.TypeID.Example.FavButton.NotFavorited.Visible = true;
+end;
+u97.FavButton.MouseButton1Click:connect(u97);
+u96 = game:GetService("RunService").RenderStepped;
+l__Gui__6.Loading.Changed:connect(function(p51)
+	if p51 == "Visible" and l__Gui__6.Loading.Visible then
+		coroutine.resume(coroutine.create(function()
+			while l__Gui__6.Loading.Visible == true do
+				u96:wait();
+				l__Gui__6.Loading.ImageLabel.Rotation = l__Gui__6.Loading.ImageLabel.Rotation + 2;			
+			end;
+		end));
+	end;
+end);
+local l__Welcome__514 = l__Gui__6.Popups.Welcome;
+v7.ButtonEffects(l__Welcome__514.Close);
+l__Welcome__514.Close.MouseButton1Click:connect(function()
+	l__Welcome__514.Visible = false;
+end);
+if u24 == false then
+	l__Welcome__514.Version.Text = "v" .. workspace.Settings.VersionNumber.Value;
+	l__Welcome__514.Visible = true;
+	l__Events__11.Welcomed:FireServer();
+	while true do
+		wait();
+		if l__Welcome__514.Visible == false then
+			break;
+		end;	
+	end;
+	v7.ChooseColor();
+end;
+while true do
+	wait();
+	if l__Gui__6.Popups.ChooseColor.Visible == false then
+		break;
+	end;
+end;
+l__Gui__6.Buttons.Visible = true;
+l__UserInputService__9.MouseIconEnabled = true;
+l__GuiService__10.SelectedObject = nil;
+coroutine.resume(coroutine.create(function()
+	local v515 = workspace.PrivateIslands:GetChildren();
+	local l__CollectionService__516 = game:GetService("CollectionService");
+	local v517 = l__CollectionService__516:GetTagged("LocationPart");
+	local v518 = 0;
+	while wait(0.2) do
+		local l__Position__519 = l__LocalPlayer__1.Character.HumanoidRootPart.Position;
+		local v520 = 99999999;
+		local v521 = 99999999;
+		local v522 = 99999999;
+		local v523 = nil;
+		for v524, v525 in pairs((l__CollectionService__516:GetTagged("LocationPart"))) do
+			if v525.Name == "IslandBox" then
+				local l__magnitude__526 = (Vector3.new(v525.Position.X, l__Position__519.Y, v525.Position.Z) - l__Position__519).magnitude;
+				if l__magnitude__526 < v522 and v525.Position.Y <= l__Position__519.Y then
+					v522 = l__magnitude__526;
+					v523 = v525;
+				end;
+			elseif v525.Name == "UpgradeHut" and v525:FindFirstChild("ShopBase") then
+				local l__magnitude__527 = (Vector3.new(v525.ShopBase.Position.X, l__Position__519.Y, v525.ShopBase.Position.Z) - l__Position__519).magnitude;
+				if l__magnitude__527 < v521 and v525.ShopBase.Position.Y <= l__Position__519.Y then
+					v521 = l__magnitude__527;
+				end;
+			elseif v525.Name == "SellHut" and v525:FindFirstChild("ShopBase") then
+				local l__magnitude__528 = (Vector3.new(v525.ShopBase.Position.X, l__Position__519.Y, v525.ShopBase.Position.Z) - l__Position__519).magnitude;
+				if l__magnitude__528 < v520 and v525.ShopBase.Position.Y <= l__Position__519.Y then
+					v520 = l__magnitude__528;
+				end;
+			end;
+		end;
+		local v529 = false;
+		for v530, v531 in pairs(u5) do
+			if v531 == "SellAnywhere" then
+				v529 = true;
+			end;
+		end;
+		local v532 = nil;
+		for v533, v534 in pairs(v515) do
+			if v534.PlayersIn:FindFirstChild(l__LocalPlayer__1.Name) then
+				v532 = v534;
+			end;
+		end;
+		if v520 <= 7 then
+			local v535 = tick();
+			if v535 - v518 >= 0.1 then
+				v518 = v535;
+				l__Events__11.AreaSell:FireServer();
+			end;
+		elseif v521 <= 7 then
+			if l__Gui__6.UpgradeShop.Visible == false and l__Gui__6.SelectUpgradeCategory.Visible == false then
+				v7.ResetUpgradeShop();
+			end;
+		elseif v522 <= 7 and v523 then
+			if v523:FindFirstChild("TeleportTo") then
+				l__LocalPlayer__1.Character.HumanoidRootPart.CFrame = v523.TeleportCF.Value * CFrame.new(-18, 0, 0) * CFrame.Angles(math.rad(180), 0, 0) + Vector3.new(0, 3, 0);
+			else
+				local v536 = false;
+				for v537, v538 in pairs(u5) do
+					if v538 == "Private Island" then
+						v536 = true;
+					end;
+				end;
+				if v536 or u59 then
+					l__Gui__6.PrivateIslands.BuyButton.Visible = false;
+					l__Gui__6.PrivateIslands.JoinMine.Visible = true;
+				else
+					l__Gui__6.PrivateIslands.BuyButton.Visible = true;
+					l__Gui__6.PrivateIslands.JoinMine.Visible = false;
+				end;
+				if l__Gui__6.PrivateIslands.Visible == false then
+					l__Gui__6.PrivateIslands.Visible = true;
+				end;
+			end;
+		elseif v532 then
+			local l__Position__539 = v532.SellBlock.Base.Position;
+			local l__Position__540 = v532.UpgradeBlock.Base.Position;
+			local l__magnitude__541 = (Vector3.new(l__Position__540.X, l__Position__519.Y, l__Position__540.Z) - l__Position__519).magnitude;
+			if (Vector3.new(l__Position__539.X, l__Position__519.Y, l__Position__539.Z) - l__Position__519).magnitude <= 7 and l__Position__539.Y <= l__Position__519.Y or v529 and u18 > 0 and u49 then
+				local v542 = tick();
+				if v542 - v518 >= 0.1 then
+					v518 = v542;
+					l__Events__11.AreaSell:FireServer();
+				end;
+			elseif l__magnitude__541 <= 7 and l__Position__540.Y <= l__Position__519.Y and l__Gui__6.UpgradeShop.Visible == false and l__Gui__6.SelectUpgradeCategory.Visible == false then
+				v7.ResetUpgradeShop();
+			end;
+		elseif v529 and u18 > 0 and u49 then
+			l__Events__11.AreaSell:FireServer();
+		end;	
+	end;
+end));
+local v543 = 20;
+local v544 = 1;
+local l__BottomBarMessage__545 = l__Gui__6.Popups.BottomBarMessage;
+local v546 = { "Welcome to Treasure Hunt Simulator version " .. workspace.Settings.VersionNumber.Value .. "!", "Follow Treasure Hunt Simulator development on Twitter! @HenryTheDev", "Treasure chests that are further underground give more coins!", "When you rebirth you lose all your progress, however your sand and chests become more valuable.", "This game autosaves, so don't worry about saving before you leave!", "Have feedback for the game? Let the creators know by joining the Discord server under the description." };
+function SecondsToClock(p52)
+	local v547 = tonumber(p52);
+	if v547 <= 0 then
+		return "00:00:00";
+	end;
+	hours = string.format("%02.f", math.floor(v547 / 3600));
+	mins = string.format("%02.f", math.floor(v547 / 60 - hours * 60));
+	secs = string.format("%02.f", math.floor(v547 - hours * 3600 - mins * 60));
+	return hours .. ":" .. mins .. ":" .. secs;
+end;
+local u99 = {};
+local l__Trade__100 = l__Gui__6.Trade;
+local u101 = {};
+local l__Trades__102 = game.ReplicatedStorage.Trades;
+local function v548()
+	if u99 ~= {} then
+		for v549, v550 in pairs(u99) do
+			v550:Disconnect();
+			if v549.Parent.Parent.Parent.Name ~= "Crates" then
+				v549:Destroy();
+			end;
+		end;
+		u99 = {};
+	end;
+	if l__Trade__100.Visible == true then
+		local l__Players__551 = l__Trade__100.ChoosePlayer.Players;
+		for v552, v553 in pairs(game.Players:GetChildren()) do
+			if l__Players__551:FindFirstChild(v553.Name) == nil and v553.Name ~= l__LocalPlayer__1.Name then
+				local v554 = l__Players__551.Example:Clone();
+				v554.Name = v553.Name;
+				v554.PlrName.Text = v553.Name;
+				v554.Visible = true;
+				v554.Parent = l__Players__551;
+				u101[v554] = v554.Button.MouseButton1Click:connect(function()
+					if v554.Button.TextLabel.Text == "Accept" then
+						local v555 = game.Players:FindFirstChild(v554.Name);
+						if v555 then
+							l__Events__11.TradeChoice:FireServer(v555, true);
+							return;
+						end;
+					elseif v554.Button.TextLabel.Text == "Request" then
+						local v556 = game.Players:FindFirstChild(v554.Name);
+						if v556 then
+							l__Events__11.RequestTrade:FireServer(v556);
+						end;
+					end;
+				end);
+			end;
+		end;
+		for v557, v558 in pairs(l__Players__551:GetChildren()) do
+			if v558:IsA("ImageLabel") and v558.Visible == true then
+				if game.Players:FindFirstChild(v558.Name) then
+					local v559 = l__Trades__102:FindFirstChild(l__LocalPlayer__1.Name);
+					if v559 and v559.RequestPlayerName.Value == v558.Name then
+						v558.Button.ImageColor3 = Color3.fromRGB(255, 87, 87);
+						v558.Button.TextLabel.Text = "Pending";
+					else
+						local v560 = l__Trades__102:FindFirstChild(v558.Name);
+						if v560 and v560.RequestPlayerName.Value == l__LocalPlayer__1.Name then
+							v558.Button.ImageColor3 = Color3.fromRGB(170, 0, 255);
+							v558.Button.TextLabel.Text = "Accept";
+						else
+							v558.Button.ImageColor3 = Color3.fromRGB(85, 255, 127);
+							v558.Button.TextLabel.Text = "Request";
+						end;
+					end;
+				else
+					if u101[v558] ~= nil then
+						u101[v558]:Disconnect();
+						u101[v558] = nil;
+					end;
+					v558:Destroy();
+				end;
+			end;
+		end;
+	end;
+end;
+local function v561(p53)
+	if p53 and p53:FindFirstChild("P1") and p53:FindFirstChild("P2") then
+		local l__Trading__562 = l__Trade__100.Trading;
+		if p53.RequestPlayerName.Value == l__LocalPlayer__1.Name then
+			l__Trading__562.OtherName.Text = p53.Name .. "'s Offer";
+		else
+			l__Trading__562.OtherName.Text = p53.RequestPlayerName.Value .. "'s Offer";
+		end;
+		l__Trading__562.YourName.Text = "Your Offer";
+		if p53.Decline.Value == true then
+			l__Trading__562.MyReady.Visible = false;
+			l__Trading__562.OtherReady.Visible = false;
+		elseif p53.Name == l__LocalPlayer__1.Name then
+			if p53.AcceptP1.Value == true then
+				l__Trading__562.MyReady.Visible = true;
+				l__Trading__562.Decline.Amount.Text = "Cancel";
+			else
+				l__Trading__562.MyReady.Visible = false;
+				l__Trading__562.Decline.Amount.Text = "Decline";
+			end;
+			if p53.AcceptP2.Value == true then
+				l__Trading__562.OtherReady.Visible = true;
+			else
+				l__Trading__562.OtherReady.Visible = false;
+			end;
+		else
+			if p53.AcceptP1.Value == true then
+				l__Trading__562.OtherReady.Visible = true;
+			else
+				l__Trading__562.OtherReady.Visible = false;
+			end;
+			if p53.AcceptP2.Value == true then
+				l__Trading__562.MyReady.Visible = true;
+				l__Trading__562.Decline.Amount.Text = "Cancel";
+			else
+				l__Trading__562.MyReady.Visible = false;
+				l__Trading__562.Decline.Amount.Text = "Decline";
+			end;
+		end;
+		local l__MyInventory__563 = l__Trading__562.MyInventory;
+		local v564 = nil;
+		local v565 = nil;
+		local v566 = nil;
+		for v567, v568 in pairs(l__MyInventory__563:GetChildren()) do
+			if v568:IsA("ImageLabel") and v568.Name == "Crates" then
+				v564 = v568;
+			elseif v568:IsA("ImageLabel") and v568.Name == "HatsInventory" then
+				v565 = v568;
+			elseif v568:IsA("ImageLabel") and v568.Name == "Inventory" then
+				v566 = v568;
+			end;
+		end;
+		local l__Frame__569 = v566.Scroll.Frame;
+		local l__Frame__570 = v565.Scroll.Frame;
+		local l__Frame__571 = v564.Scroll.Frame;
+		local l__Frame__572 = l__MyInventory__563.Offer.Frame;
+		local v573 = p53.P1;
+		local v574 = p53.P1_Trading;
+		if p53.RequestPlayerName.Value == l__LocalPlayer__1.Name then
+			v573 = p53.P2;
+			v574 = p53.P2_Trading;
+		end;
+		for v575, v576 in pairs(v573:GetChildren()) do
+			local v577 = game.ReplicatedStorage.Skins:FindFirstChild(v576.Name);
+			local v578 = game.ReplicatedStorage.Hats:FindFirstChild(v576.Name);
+			if v577 then
+				if l__Frame__569:FindFirstChild(v576.Name) == nil then
+					local v579 = l__Frame__569.Example:Clone();
+					v579.Name = v576.Name;
+					v579.Visible = true;
+					v579.Img.Image = v577.Texture.Texture;
+					v579.Img.Num.Text = "x" .. v576.Value;
+					v579.Img.SkinName.Text = string.sub(v576.Name, 1, 12);
+					v579.ImageColor3 = GetRarityColor(v577.Rarity.Value);
+					v579.LayoutOrder = v577.Rarity.Value;
+					v579.Parent = l__Frame__569;
+					u99[v579] = v579.MouseButton1Click:connect(function()
+						if l__Frame__572:FindFirstChild(v579.Name) == nil then
+							local v580 = v579:Clone();
+							v580.Visible = false;
+							v580.Parent = l__Frame__572;
+							u99[v580] = v580.MouseButton1Click:connect(function()
+								l__Events__11.ChangeTradeQuantity:FireServer(v580.Name, "Remove");
+							end);
+						end;
+						l__Events__11.ChangeTradeQuantity:FireServer(v579.Name, "Add");
+					end);
+				end;
+			elseif v578 then
+				if l__Frame__570:FindFirstChild(v576.Name) == nil then
+					local v581 = l__Frame__570.Example:Clone();
+					v581.Name = v576.Name;
+					v581.Visible = true;
+					v581.Img.Image = v578.Texture.Texture;
+					v581.Img.Num.Text = "x" .. v576.Value;
+					v581.Img.Strength.Text = "+ " .. v7.GiveCommas(v578.Strength.Value);
+					v581.Img.SkinName.Text = string.sub(v576.Name, 1, 12);
+					v581.ImageColor3 = GetRarityColor(v578.Rarity.Value);
+					v581.LayoutOrder = v578.Rarity.Value;
+					v581.Parent = l__Frame__570;
+					u99[v581] = v581.MouseButton1Click:connect(function()
+						if l__Frame__572:FindFirstChild(v581.Name) == nil then
+							local v582 = v581:Clone();
+							v582.Visible = false;
+							v582.Parent = l__Frame__572;
+							u99[v582] = v582.MouseButton1Click:connect(function()
+								l__Events__11.ChangeTradeQuantity:FireServer(v582.Name, "Remove");
+							end);
+						end;
+						l__Events__11.ChangeTradeQuantity:FireServer(v581.Name, "Add");
+					end);
+				end;
+			else
+				local v583 = l__Frame__571:FindFirstChild(v576.Name);
+				if v583 and u99[v583] == nil then
+					u99[v583] = v583.MouseButton1Click:connect(function()
+						if l__Frame__572:FindFirstChild(v583.Name) == nil then
+							local v584 = v583:Clone();
+							v584.Visible = false;
+							v584.Parent = l__Frame__572;
+							u99[v584] = v584.MouseButton1Click:connect(function()
+								l__Events__11.ChangeTradeQuantity:FireServer(v584.Name, "Remove");
+							end);
+						end;
+						l__Events__11.ChangeTradeQuantity:FireServer(v583.Name, "Add");
+					end);
+				end;
+			end;
+		end;
+		local v585 = 0;
+		for v586, v587 in pairs(l__Frame__569:GetChildren()) do
+			if v587:IsA("ImageButton") and v587.Name ~= "Example" then
+				local v588 = v573:FindFirstChild(v587.Name);
+				local v589 = 0;
+				if v588 then
+					v589 = v588.Value;
+				end;
+				if v589 > 0 then
+					v587.Visible = true;
+					v587.Img.Num.Text = "x" .. v589;
+					v585 = v585 + 1;
+				else
+					v587.Visible = false;
+				end;
+			end;
+		end;
+		local l__Parent__590 = l__Frame__569.Parent;
+		local v591 = math.floor(v585 / 8) + 1;
+		l__Parent__590.CanvasSize = UDim2.new(0, 0, v591, 0);
+		l__Parent__590.CanvasSize = UDim2.new(0, 0, v591, 0);
+		l__Frame__569.Size = UDim2.new(1, 0, 1 / (2 * v591), 0);
+		local v592 = 0;
+		for v593, v594 in pairs(l__Frame__570:GetChildren()) do
+			if v594:IsA("ImageButton") and v594.Name ~= "Example" then
+				local v595 = v573:FindFirstChild(v594.Name);
+				local v596 = 0;
+				if v595 then
+					v596 = v595.Value;
+				end;
+				if v596 > 0 then
+					v594.Visible = true;
+					v594.Img.Num.Text = "x" .. v596;
+					v592 = v592 + 1;
+				else
+					v594.Visible = false;
+				end;
+			end;
+		end;
+		local l__Parent__597 = l__Frame__570.Parent;
+		local v598 = math.floor(v592 / 8) + 1;
+		l__Parent__597.CanvasSize = UDim2.new(0, 0, v598, 0);
+		l__Parent__597.CanvasSize = UDim2.new(0, 0, v598, 0);
+		l__Frame__570.Size = UDim2.new(1, 0, 1 / (2 * v598), 0);
+		for v599, v600 in pairs(l__Frame__571:GetChildren()) do
+			if v600:IsA("ImageButton") and v600.Name ~= "Example" then
+				local v601 = v573:FindFirstChild(v600.Name);
+				local v602 = 0;
+				if v601 then
+					v602 = v601.Value;
+				end;
+				if v602 > 0 then
+					v600.Visible = true;
+					v600.Img.Num.Text = "x" .. v602;
+				else
+					v600.Visible = false;
+				end;
+			end;
+		end;
+		for v603, v604 in pairs(l__Frame__572:GetChildren()) do
+			if v604:IsA("ImageButton") and v604.Name ~= "Example" then
+				local v605 = v574:FindFirstChild(v604.Name);
+				if v605 then
+					if v605.Value > 0 then
+						v604.Visible = true;
+						v604.Img.Num.Text = "x" .. v605.Value;
+					else
+						v604.Visible = false;
+					end;
+				else
+					v604.Visible = false;
+				end;
+			end;
+		end;
+		local l__OtherInventory__606 = l__Trading__562.OtherInventory;
+		local v607 = nil;
+		local v608 = nil;
+		local v609 = nil;
+		for v610, v611 in pairs(l__OtherInventory__606:GetChildren()) do
+			if v611:IsA("ImageLabel") and v611.Name == "Crates" then
+				v607 = v611;
+			elseif v611:IsA("ImageLabel") and v611.Name == "HatsInventory" then
+				v608 = v611;
+			elseif v611:IsA("ImageLabel") and v611.Name == "Inventory" then
+				v609 = v611;
+			end;
+		end;
+		local l__Frame__612 = v609.Scroll.Frame;
+		local l__Frame__613 = v608.Scroll.Frame;
+		local l__Frame__614 = v607.Scroll.Frame;
+		local l__Frame__615 = l__OtherInventory__606.Offer.Frame;
+		local v616 = p53.P2;
+		local v617 = p53.P2_Trading;
+		if p53.RequestPlayerName.Value == l__LocalPlayer__1.Name then
+			v616 = p53.P1;
+			v617 = p53.P1_Trading;
+		end;
+		for v618, v619 in pairs(v616:GetChildren()) do
+			local v620 = game.ReplicatedStorage.Skins:FindFirstChild(v619.Name);
+			local v621 = game.ReplicatedStorage.Hats:FindFirstChild(v619.Name);
+			if v620 then
+				if l__Frame__612:FindFirstChild(v619.Name) == nil then
+					local v622 = l__Frame__612.Example:Clone();
+					v622.Name = v619.Name;
+					v622.Visible = true;
+					v622.Img.Image = v620.Texture.Texture;
+					v622.Img.Num.Text = "x" .. v619.Value;
+					v622.Img.SkinName.Text = string.sub(v619.Name, 1, 12);
+					v622.ImageColor3 = GetRarityColor(v620.Rarity.Value);
+					v622.LayoutOrder = v620.Rarity.Value;
+					v622.Parent = l__Frame__612;
+					if l__Frame__615:FindFirstChild(v622.Name) == nil then
+						local v623 = v622:Clone();
+						v623.Visible = false;
+						v623.Parent = l__Frame__615;
+					end;
+				end;
+			elseif v621 then
+				if l__Frame__613:FindFirstChild(v619.Name) == nil then
+					local v624 = l__Frame__613.Example:Clone();
+					v624.Name = v619.Name;
+					v624.Visible = true;
+					v624.Img.Image = v621.Texture.Texture;
+					v624.Img.Num.Text = "x" .. v619.Value;
+					v624.Img.Strength.Text = "+ " .. v7.GiveCommas(v621.Strength.Value);
+					v624.Img.SkinName.Text = string.sub(v619.Name, 1, 12);
+					v624.ImageColor3 = GetRarityColor(v621.Rarity.Value);
+					v624.LayoutOrder = v621.Rarity.Value;
+					v624.Parent = l__Frame__613;
+					if l__Frame__615:FindFirstChild(v624.Name) == nil then
+						local v625 = v624:Clone();
+						v625.Visible = false;
+						v625.Parent = l__Frame__615;
+					end;
+				end;
+			else
+				local v626 = l__Frame__614:FindFirstChild(v619.Name);
+				if v626 and l__Frame__615:FindFirstChild(v626.Name) == nil then
+					local v627 = v626:Clone();
+					v627.Visible = false;
+					v627.Parent = l__Frame__615;
+				end;
+			end;
+		end;
+		local v628 = 0;
+		for v629, v630 in pairs(l__Frame__612:GetChildren()) do
+			if v630:IsA("ImageButton") and v630.Name ~= "Example" then
+				local v631 = v616:FindFirstChild(v630.Name);
+				local v632 = 0;
+				if v631 then
+					v632 = v631.Value;
+				end;
+				if v632 > 0 then
+					v630.Visible = true;
+					v630.Img.Num.Text = "x" .. v632;
+					v628 = v628 + 1;
+				else
+					v630.Visible = false;
+				end;
+			end;
+		end;
+		local l__Parent__633 = l__Frame__612.Parent;
+		local v634 = math.floor(v628 / 8) + 1;
+		l__Parent__633.CanvasSize = UDim2.new(0, 0, v634, 0);
+		l__Parent__633.CanvasSize = UDim2.new(0, 0, v634, 0);
+		l__Frame__612.Size = UDim2.new(1, 0, 1 / (2 * v634), 0);
+		local v635 = 0;
+		for v636, v637 in pairs(l__Frame__613:GetChildren()) do
+			if v637:IsA("ImageButton") and v637.Name ~= "Example" then
+				local v638 = v616:FindFirstChild(v637.Name);
+				local v639 = 0;
+				if v638 then
+					v639 = v638.Value;
+				end;
+				if v639 > 0 then
+					v637.Visible = true;
+					v637.Img.Num.Text = "x" .. v639;
+					v635 = v635 + 1;
+				else
+					v637.Visible = false;
+				end;
+			end;
+		end;
+		local l__Parent__640 = l__Frame__613.Parent;
+		local v641 = math.floor(v635 / 8) + 1;
+		l__Parent__640.CanvasSize = UDim2.new(0, 0, v641, 0);
+		l__Parent__640.CanvasSize = UDim2.new(0, 0, v641, 0);
+		l__Frame__613.Size = UDim2.new(1, 0, 1 / (2 * v641), 0);
+		for v642, v643 in pairs(l__Frame__614:GetChildren()) do
+			if v643:IsA("ImageButton") and v643.Name ~= "Example" then
+				local v644 = v616:FindFirstChild(v643.Name);
+				local v645 = 0;
+				if v644 then
+					v645 = v644.Value;
+				end;
+				if v645 > 0 then
+					v643.Visible = true;
+					v643.Img.Num.Text = "x" .. v645;
+				else
+					v643.Visible = false;
+				end;
+			end;
+		end;
+		for v646, v647 in pairs(l__Frame__615:GetChildren()) do
+			if v647:IsA("ImageButton") and v647.Name ~= "Example" then
+				local v648 = v617:FindFirstChild(v647.Name);
+				if v648 then
+					if v648.Value > 0 then
+						v647.Visible = true;
+						v647.Img.Num.Text = "x" .. v648.Value;
+					else
+						v647.Visible = false;
+					end;
+				else
+					v647.Visible = false;
+				end;
+			end;
+		end;
+	end;
+end;
+local l__TimeUntilCollapse__649 = workspace:WaitForChild("Settings"):WaitForChild("TimeUntilCollapse");
+local function u103(p54)
+	mins = math.floor(p54 / 60);
+	seconds = p54 % 60;
+	if seconds < 10 then
+		seconds = "0" .. seconds;
+	end;
+	return mins .. ":" .. seconds;
+end;
+l__TimeUntilCollapse__649.Changed:connect(function()
+	l__Gui__6.Popups.TimeLeft.Text = u103(l__TimeUntilCollapse__649.Value);
+end);
+local v650 = {};
+while wait(0.1) do
+	for v651, v652 in pairs(workspace.IslandBuyDoors:GetChildren()) do
+		local v653 = game.ReplicatedStorage.Islands:FindFirstChild(v652.Name);
+		if v653 then
+			if MeetsIslandReq(v653) then
+				if v650[v652] then
+					v650[v652]:Disconnect();
+				end;
+				v652:Destroy();
+			elseif v650[v652] == nil then
+				v650[v652] = v652.SurfaceGui.Frame.Buy.MouseButton1Click:connect(function()
+					if u2[v653.Name] == nil then
+						local l__Gamepass__654 = v653.Requirements:FindFirstChild("Gamepass");
+						if l__Gamepass__654 then
+							if game.ReplicatedStorage.Gamepasses:FindFirstChild(l__Gamepass__654.Value) then
+								l__MarketplaceService__8:PromptGamePassPurchase(l__LocalPlayer__1, game.ReplicatedStorage.Gamepasses[l__Gamepass__654.Value].ID.Value);
+								return;
+							end;
+						elseif v653:FindFirstChild("ProductID") then
+							l__MarketplaceService__8:PromptProductPurchase(l__LocalPlayer__1, v653.ProductID.Value);
+						end;
+					end;
+				end);
+			end;
+		end;
+	end;
+	if l__Gui__6.UpgradeShop.Visible and l__Gui__6.Buttons.Visible then
+		l__Gui__6.Buttons.Visible = false;
+		if v16 then
+			l__GuiService__10.SelectedObject = l__Gui__6.UpgradeShop.Buy;
+		end;
+	end;
+	l__Gui__6.Popups.TimeLeft.Visible = l__Gui__6.Buttons.Visible;
+	if l__Gui__6.Buttons.Visible == false then
+		if l__Gui__6.Popups.TradeOffer.Visible then
+			l__Gui__6.Popups.TradeOffer.Visible = false;
+		end;
+		if v16 and l__GuiService__10.SelectedObject == nil then
+			for v655, v656 in pairs(v54) do
+				if v655.Visible then
+					l__GuiService__10.SelectedObject = v656;
+				end;
+			end;
+		end;
+		local v657 = false;
+		for v658, v659 in pairs(v54) do
+			if v658.Visible and v658.Parent == l__Gui__6 then
+				v657 = true;
+			end;
+		end;
+		if v657 == false then
+			l__Gui__6.Buttons.Visible = true;
+		end;
+	elseif v16 then
+		for v660, v661 in pairs(v54) do
+			if v660.Visible and v660.Parent == l__Gui__6 then
+				l__Gui__6.Buttons.Visible = false;
+				if l__GuiService__10.SelectedObject == nil then
+					l__GuiService__10.SelectedObject = v661;
+				end;
+			end;
+		end;
+	end;
+	if l__Gui__6.Buttons.LeaveIsland.Visible == true then
+		if l__Gui__6.PrivateIslands.Visible then
+			l__Gui__6.PrivateIslands.Visible = false;
+		end;
+		if l__Gui__6.Islands.Visible then
+			l__Gui__6.Islands.Visible = false;
+		end;
+	end;
+	local v662 = SecondsToClock(43200 - (math.floor(os.time()) - u22));
+	l__Gui__6.Popups.DailyReward.Text = "Daily Reward: " .. v662;
+	l__Gui__6.Popups.DailyRewardFrame.Timer.Text = v662;
+	u77 = u77 - 3;
+	if u77 < 0 then
+		u77 = 0;
+	end;
+	local u104 = v543;
+	local u105 = v544;
+	pcall(function()
+		if l__Gui__6.Enabled and l__Sounds__4.Rebirth.IsPlaying == false then
+			if u12 ~= nil then
+				v3.UpdateMusic(l__LocalPlayer__1, l__Sounds__4, u12);
+			else
+				v3.UpdateMusic(l__LocalPlayer__1, l__Sounds__4);
+			end;
+		end;
+		if u104 > 0 then
+			u104 = u104 - 1;
+			l__BottomBarMessage__545.Text = v546[u105];
+		else
+			u104 = 200;
+			u105 = u105 + 1;
+			if #v546 < u105 then
+				u105 = 1;
+			end;
+			coroutine.resume(coroutine.create(function()
+				l__BottomBarMessage__545.Text = v546[u105];
+			end));
+		end;
+		if l__LocalPlayer__1 and l__LocalPlayer__1.Character and l__LocalPlayer__1.Character:FindFirstChild("Humanoid") then
+			if not (not l__Gui__6.UpgradeShop.Visible) or not (not l__Gui__6.SelectUpgradeCategory.Visible) or not (not l__Gui__6.PrivateIslands.Visible) or l__Gui__6.Islands.Visible then
+				l__LocalPlayer__1.Character.Humanoid.WalkSpeed = 0;
+				if l__Gui__6.PrivateIslands.Visible then
+					v7.UpdateFriendIslands();
+				end;
+			else
+				local v663 = false;
+				for v664, v665 in pairs(u5) do
+					if v665 == "Sprint" then
+						v663 = true;
+					end;
+				end;
+				if v663 == true then
+					l__LocalPlayer__1.Character.Humanoid.WalkSpeed = 32;
+				else
+					l__LocalPlayer__1.Character.Humanoid.WalkSpeed = 16;
+				end;
+				v7.ResetCamera();
+			end;
+		end;
+		if l__LocalPlayer__1 and l__LocalPlayer__1.Character and l__LocalPlayer__1.Character:FindFirstChild("HumanoidRootPart") then
+			local v666 = math.floor((game.ReplicatedStorage.Islands.Starter.StartPos.Position.Y - l__LocalPlayer__1.Character.HumanoidRootPart.Position.Y) / 6) + 1;
+			if v666 < 0 then
+				v666 = 0;
+			end;
+			l__Gui__6.Popups.DepthInfo.Text = "Depth: " .. v666 .. " Blocks";
+		end;
+		local v667 = false;
+		local v668, v669, v670 = pairs(v15);
+		while true do
+			local v671, v672 = v668(v669, v670);
+			if not v671 then
+				break;
+			end;
+			if v672.PlayersIn:FindFirstChild(l__LocalPlayer__1.Name) then
+				v667 = true;
+				u6 = v672;
+			end;
+			if v672.OwnerName.Value == l__LocalPlayer__1.Name then
+				u59 = v672;
+			end;		
+		end;
+		if v667 == true then
+			l__Gui__6.Buttons.LeaveIsland.Visible = true;
+		else
+			l__Gui__6.Buttons.LeaveIsland.Visible = false;
+		end;
+		if v16 == false then
+			spawn(function()
+				if l__Gui__6.Buttons.Visible == false and l__Gui__6.UpgradeShop.Visible == false and l__Gui__6.SelectUpgradeCategory.Visible == false then
+					wait(0.5);
+					if l__Gui__6.Buttons.Visible == false and l__Gui__6.UpgradeShop.Visible == false and l__Gui__6.SelectUpgradeCategory.Visible == false then
+						l__Gui__6.Buttons.Visible = true;
+					end;
+				end;
+			end);
+		end;
+		local v673 = l__Trades__102:FindFirstChild(l__LocalPlayer__1.Name);
+		local l__TradeOffer__674 = l__Gui__6.Popups.TradeOffer;
+		if v673 then
+			if v673:FindFirstChild("P2") then
+				l__Trade__100.ChoosePlayer.Visible = false;
+				l__Trade__100.Trading.Visible = true;
+				v561(v673);
+			else
+				l__Trade__100.ChoosePlayer.Visible = true;
+				l__Trade__100.Trading.Visible = false;
+				v548();
+			end;
+		else
+			local v675 = {};
+			local v676 = nil;
+			for v677, v678 in pairs(l__Trades__102:GetChildren()) do
+				if v678.RequestPlayerName.Value == l__LocalPlayer__1.Name then
+					table.insert(v675, v678);
+					if v678:FindFirstChild("P2") then
+						v676 = v678;
+					end;
+				end;
+			end;
+			if v676 then
+				l__Trade__100.ChoosePlayer.Visible = false;
+				l__Trade__100.Trading.Visible = true;
+				v561(v676);
+			else
+				l__Trade__100.ChoosePlayer.Visible = true;
+				l__Trade__100.Trading.Visible = false;
+				v548();
+			end;
+		end;
+		local v679 = {};
+		local v680 = false;
+		for v681, v682 in pairs(l__Trades__102:GetChildren()) do
+			if v682.RequestPlayerName.Value == l__LocalPlayer__1.Name then
+				table.insert(v679, v682);
+				if v682:FindFirstChild("P2") then
+					v680 = true;
+				end;
+			elseif v682.Name == l__LocalPlayer__1.Name and v682:FindFirstChild("P2") then
+				v680 = true;
+			end;
+		end;
+		if #v679 > 0 and v680 == false then
+			if u48 == true and l__Gui__6.Buttons.Visible then
+				l__TradeOffer__674.Visible = true;
+				l__TradeOffer__674.Info.Text = v679[1].Name;
+			else
+				l__TradeOffer__674.Visible = false;
+				local v683 = game.Players:FindFirstChild(v679[1].Name);
+				if v683 then
+					l__Events__11.TradeChoice:FireServer(v683, false);
+				end;
+			end;
+		else
+			l__TradeOffer__674.Visible = false;
+		end;
+		if v680 then
+			l__Gui__6.Trade.Visible = true;
+		end;
+	end);
+end;
